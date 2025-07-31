@@ -163,7 +163,7 @@ agent = initialize_agent(
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
     handle_parsing_errors=True,    
-    max_iterations=1,
+    # max_iterations=1,
     memory=memory
 )
 agent_executor = AgentExecutor.from_agent_and_tools(agent,tools=tools,handle_parsing_errors=True,)
