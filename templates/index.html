@@ -1,0 +1,154 @@
+<!DOCTYPE HTML>
+<HTML>
+<HEAD>
+  <TITLE>BrightCom Loan Agent</TITLE>
+  <META charset="UTF-8" />
+  <STYLE>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f1f1f1;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    h1 {
+      background-color: white ; 
+      color: #f16726;;
+      padding: 20px;
+      margin: 0;
+      text-align: center;
+    }
+
+    #chat {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: #fff;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .message {
+      margin: 10px 0;
+      padding: 10px 15px;
+      border-radius: 10px;
+      max-width: 80%;
+      clear: both;
+    }
+
+    .user {
+      background-color: #d1e7dd;
+      align-self: flex-end;
+      float: right;
+    }
+
+    .bot {
+      background-color: #f8d7da;
+      align-self: flex-start;
+      float: left;
+    }
+
+    #input-box {
+      display: flex;
+      padding: 10px;
+      background-color: #fafafa;
+      border-top: 1px solid #ccc;
+    }
+
+    #user {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      outline: none;
+    }
+
+    button {
+      margin-left: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #206040;
+      color: white;
+      font-weight: 800;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #f16726;
+    }
+  </STYLE>
+
+  <SCRIPT>
+    let history = [];
+
+    async function sendMessage() {
+
+        const inputField = document.getElementById("user");
+        const chatBox = document.getElementById("chat");
+        const input = inputField.value.trim();
+
+        if (!input) return;
+        
+        // Show user message
+        const userBubble = document.createElement("div");
+        userBubble.className = "message user";
+        userBubble.innerText = input;
+        chatBox.appendChild(userBubble);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        history.push({ role: "user", content: input });
+        inputField.value = "";
+
+        // ⏳ Show loading message
+        const loadingBubble = document.createElement("div");
+        loadingBubble.className = "message bot";
+        loadingBubble.innerText = "Bot is typing...";
+        chatBox.appendChild(loadingBubble);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const response = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ promt: input, history: history }),
+            });
+
+            const data = await response.json();
+            const reply = data.response || "No response";
+
+            // ✅ Replace loading with actual bot message
+            loadingBubble.innerText = reply;
+            history.push({ role: "assistant", content: reply });
+
+        } catch (err) {
+            loadingBubble.innerText = "Error contacting the model.";
+        }
+        }
+
+
+    // Send on Enter key
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("user").addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
+    });
+
+
+  </SCRIPT>
+</HEAD>
+<BODY>
+  <H1>BrightCom Loan Agent</H1>
+  <DIV ID="chat"></DIV>
+  <DIV ID="input-box">
+    <INPUT ID="user" TYPE="text" PLACEHOLDER="Type your message..." />
+    <BUTTON onclick="sendMessage()">></BUTTON>
+  </DIV>
+</BODY>
+</HTML>
