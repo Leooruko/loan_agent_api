@@ -1,5 +1,5 @@
 """
-Configuration settings for the GreenCom Loan Assistant API
+Configuration settings for the Brightcom Loan Assistant API
 """
 
 import os
@@ -15,15 +15,18 @@ FLASK_CONFIG = {
 # AI Model Configuration
 AI_CONFIG = {
     'MODEL_NAME': 'mistral',
-    'MAX_QUERY_LENGTH': 1000,
-    'MAX_SQL_LENGTH': 500,
-    'TIMEOUT_SECONDS': 30
+    'MAX_QUERY_LENGTH': 500,  # Reduced for better performance
+    'MAX_SQL_LENGTH': 300,    # Reduced for security and performance
+    'TIMEOUT_SECONDS': 60,    # Increased timeout for complex queries
+    'MAX_ITERATIONS': 2,      # Limit agent iterations
+    'TEMPERATURE': 0.1        # Lower temperature for more consistent responses
 }
 
 # Data Configuration
 DATA_CONFIG = {
     'CSV_FILE_PATH': 'processed_data.csv',
-    'ENCODING': 'utf-8'
+    'ENCODING': 'utf-8',
+    'MAX_ROWS_DISPLAY': 10    # Limit displayed rows for performance
 }
 
 # UI Configuration
@@ -70,29 +73,54 @@ UI_CONFIG = {
     ]
 }
 
-# Error Messages
+# Error Messages - Improved for better user experience
 ERROR_MESSAGES = {
-    'NO_DATA': "I'm sorry, but I can't access the loan data right now. Please try again later.",
-    'INVALID_QUERY': "I couldn't understand that question. Could you please ask about loans, payments, or clients in a different way?",
-    'COMPLEX_QUERY': "That query is too complex. Could you please ask a simpler question about the loan data?",
-    'EMPTY_RESULTS': "I couldn't find any data matching your question. Could you try rephrasing it or ask about something else in the loan portfolio?",
-    'TIMEOUT': "I'm taking a bit longer than usual to process your question. Could you try asking it again in a moment?",
-    'RESOURCE_ERROR': "I'm having trouble processing that complex question. Could you try asking about something more specific in your loan data?",
-    'GENERAL_ERROR': "I'm having trouble understanding that question. Could you please rephrase it or ask about something else in your loan portfolio?",
+    'NO_DATA': "I'm sorry, but I can't access the loan data right now. Please check if the data file exists and try again.",
+    'INVALID_QUERY': "I couldn't understand that question. Please try asking about loans, payments, or clients in a simpler way.",
+    'COMPLEX_QUERY': "That question is too complex. Please ask a simpler question about your loan data.",
+    'EMPTY_RESULTS': "I couldn't find any data matching your question. Try asking about something else in your loan portfolio.",
+    'TIMEOUT': "The request is taking longer than expected. Please try a simpler question or try again in a moment.",
+    'RESOURCE_ERROR': "I'm having trouble processing that question. Please try asking about something more specific in your loan data.",
+    'GENERAL_ERROR': "I'm having trouble understanding that question. Please rephrase it or ask about something else in your loan portfolio.",
     'NETWORK_ERROR': "I'm having trouble connecting right now. Please check your connection and try again.",
     'CONNECTION_TIMEOUT': "The request is taking longer than expected. Please try again in a moment.",
-    'NETWORK_ISSUE': "Network connection issue. Please check your internet connection."
+    'NETWORK_ISSUE': "Network connection issue. Please check your internet connection.",
+    'SQL_ERROR': "There was an issue with the database query. Please try rephrasing your question.",
+    'DATA_LOAD_ERROR': "Unable to load loan data. Please check if the data file is available and try again.",
+    'TOOL_ERROR': "I'm having trouble using the data analysis tools. Please try asking your question in a different way."
 }
 
 # Success Messages
 SUCCESS_MESSAGES = {
     'WELCOME': "Hello! I'm here to help you with loan and financial data questions. What would you like to know about your loan portfolio?",
-    'DEFAULT_RESPONSE': "I'd be happy to help with loan-related questions! What would you like to know about your loan portfolio?"
+    'DEFAULT_RESPONSE': "I'd be happy to help with loan-related questions! What would you like to know about your loan portfolio?",
+    'MEMORY_CLEARED': "Conversation memory has been cleared. You can start a new conversation.",
+    'QUERY_SUCCESS': "I've analyzed your loan data. Here's what I found:"
 }
 
-# Logging Configuration
+# Logging Configuration - Enhanced for better debugging
 LOGGING_CONFIG = {
     'LEVEL': 'INFO',
     'FORMAT': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    'FILE': 'loan_assistant.log'
+    'FILE': 'loan_assistant.log',
+    'MAX_BYTES': 10485760,  # 10MB
+    'BACKUP_COUNT': 5
+}
+
+# Performance Configuration
+PERFORMANCE_CONFIG = {
+    'CACHE_ENABLED': True,
+    'CACHE_TIMEOUT': 300,  # 5 minutes
+    'MAX_CONCURRENT_REQUESTS': 5,
+    'REQUEST_TIMEOUT': 30,
+    'RETRY_ATTEMPTS': 3,
+    'RETRY_DELAY': 1
+}
+
+# Security Configuration
+SECURITY_CONFIG = {
+    'ALLOWED_SQL_KEYWORDS': ['SELECT', 'FROM', 'WHERE', 'ORDER BY', 'GROUP BY', 'LIMIT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN'],
+    'BLOCKED_SQL_KEYWORDS': ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 'EXEC', 'EXECUTE'],
+    'MAX_QUERY_COMPLEXITY': 5,  # Number of clauses allowed
+    'RATE_LIMIT_PER_MINUTE': 30
 } 
