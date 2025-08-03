@@ -33,8 +33,8 @@ AVAILABLE DATA (table 'df'):
 - Issued_Date: When loan was issued
 - Amount_Disbursed: Loan amount given to client
 - Installments: Total number of installments
-- Total_Paid: Amount client has paid so far
-- Total_Charged: Total amount owed (principal + interest)
+- Total Paid: Amount client has paid so far
+- Total Charged: Total amount owed (principal + interest)
 - Days_Since_Issued: Days since loan was issued
 - Is_Installment_Day: Whether today is a payment day
 - Weeks_Passed: Weeks since loan was issued
