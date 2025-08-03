@@ -65,6 +65,7 @@
       color: white;
       padding: 20px;
       text-align: center;
+      position: relative;
     }
 
     .chat-header h2 {
@@ -75,6 +76,44 @@
     .chat-header p {
       opacity: 0.9;
       font-size: 0.9rem;
+    }
+
+    .clear-chat-btn {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.3s ease;
+    }
+
+    .clear-chat-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+    }
+
+    .memory-indicator {
+      position: absolute;
+      top: 15px;
+      left: 20px;
+      background: rgba(46, 204, 113, 0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 15px;
+      font-size: 0.7rem;
+      font-weight: 500;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
     }
 
     .chat-messages {
@@ -343,6 +382,12 @@
     <div class="chat-header">
       <h2><i class="fas fa-robot"></i> AI Assistant</h2>
       <p>Ask me anything about your loan portfolio, payments, or clients</p>
+      <div class="memory-indicator" id="memoryIndicator" style="display: none;">
+        <i class="fas fa-brain"></i> Memory Active
+      </div>
+      <button id="clearChatBtn" class="clear-chat-btn" onclick="clearChat()">
+        <i class="fas fa-trash"></i> Clear Chat
+      </button>
     </div>
 
     <div class="chat-messages" id="chatMessages">
@@ -436,6 +481,56 @@
       sendMessage();
     }
 
+    async function clearChat() {
+      if (confirm('Are you sure you want to clear the chat history? This will reset the conversation memory.')) {
+        try {
+          const response = await fetch('/api/memory/clear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (response.ok) {
+            // Clear the chat messages from the UI
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+              <div class="welcome-message">
+                <h3><i class="fas fa-hand-wave"></i> Welcome!</h3>
+                <p>I'm here to help you understand your loan data better. You can ask me about:</p>
+                <div class="suggestions">
+                  <div class="suggestion-chip" onclick="askQuestion('How many active loans do we have?')">
+                    <i class="fas fa-chart-bar"></i> Active Loans
+                  </div>
+                  <div class="suggestion-chip" onclick="askQuestion('Which clients have the highest arrears?')">
+                    <i class="fas fa-exclamation-triangle"></i> High Arrears
+                  </div>
+                  <div class="suggestion-chip" onclick="askQuestion('What is our total loan portfolio value?')">
+                    <i class="fas fa-dollar-sign"></i> Portfolio Value
+                  </div>
+                  <div class="suggestion-chip" onclick="askQuestion('Show me clients with multiple loans')">
+                    <i class="fas fa-users"></i> Multiple Loans
+                  </div>
+                </div>
+              </div>
+            `;
+            
+            // Clear the message history
+            messageHistory = [];
+            
+            // Hide memory indicator
+            document.getElementById('memoryIndicator').style.display = 'none';
+            
+            // Show success message
+            addMessage('Chat history cleared successfully! You can start a new conversation.', 'bot');
+          } else {
+            addMessage('Failed to clear chat history. Please try again.', 'bot', true);
+          }
+        } catch (error) {
+          console.error('Error clearing chat:', error);
+          addMessage('Error clearing chat history. Please try again.', 'bot', true);
+        }
+      }
+    }
+
     async function sendMessage() {
       const inputField = document.getElementById('chatInput');
       const sendButton = document.getElementById('sendButton');
@@ -447,6 +542,11 @@
       addMessage(message, 'user');
       messageHistory.push({ role: 'user', content: message });
       inputField.value = '';
+
+      // Show memory indicator if this is not the first message
+      if (messageHistory.length > 1) {
+        document.getElementById('memoryIndicator').style.display = 'block';
+      }
 
       // Show loading state
       const loadingMessage = addMessage('loading', 'bot');

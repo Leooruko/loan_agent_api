@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import requests
-from utils import promt_llm
+from utils import promt_llm, clear_conversation_memory, get_conversation_memory
 import asyncio
 import logging
 from datetime import datetime
@@ -117,6 +117,65 @@ def api_info():
         ],
         "timestamp": datetime.now().isoformat()
     })
+
+@app.route("/api/memory/clear", methods=['POST'])
+def clear_memory():
+    """Clear conversation memory"""
+    try:
+        result = clear_conversation_memory()
+        return jsonify({
+            "message": result,
+            "timestamp": datetime.now().isoformat(),
+            "status": "success"
+        })
+    except Exception as e:
+        logger.error(f"Error clearing memory: {e}")
+        return jsonify({
+            "error": "Failed to clear memory",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route("/api/memory", methods=['GET'])
+def get_memory():
+    """Get current conversation memory"""
+    try:
+        memory_messages = get_conversation_memory()
+        return jsonify({
+            "memory": [{"role": msg.type, "content": msg.content} for msg in memory_messages],
+            "message_count": len(memory_messages),
+            "timestamp": datetime.now().isoformat(),
+            "status": "success"
+        })
+    except Exception as e:
+        logger.error(f"Error getting memory: {e}")
+        return jsonify({
+            "error": "Failed to get memory",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
+@app.route("/api/debug/memory", methods=['GET'])
+def debug_memory():
+    """Debug endpoint to check memory status"""
+    try:
+        from utils import memory
+        memory_messages = get_conversation_memory()
+        return jsonify({
+            "memory_exists": memory is not None,
+            "memory_type": str(type(memory)),
+            "message_count": len(memory_messages),
+            "messages": [{"role": msg.type, "content": msg.content[:100] + "..." if len(msg.content) > 100 else msg.content} for msg in memory_messages],
+            "timestamp": datetime.now().isoformat(),
+            "status": "success"
+        })
+    except Exception as e:
+        logger.error(f"Error in debug memory: {e}")
+        return jsonify({
+            "error": "Debug memory failed",
+            "message": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
 
 @app.errorhandler(404)
 def not_found(error):

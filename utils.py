@@ -181,7 +181,7 @@ agent_executor = AgentExecutor.from_agent_and_tools(agent,tools=tools,handle_par
 
 
 
-async def promt_llm(query):
+async def promt_llm(query, conversation_history=None):
     try:
         # Validate input
         if not query or not query.strip():
@@ -191,7 +191,8 @@ async def promt_llm(query):
         if len(query) > AI_CONFIG['MAX_QUERY_LENGTH']:
             return ERROR_MESSAGES['COMPLEX_QUERY']
         
-        response = agent.invoke(query)
+        # Use agent_executor which has memory properly configured
+        response = agent_executor.invoke({"input": query})
         return response["output"]
     except Exception as e:
         print(f'Error processing query: {e}')
@@ -205,6 +206,16 @@ async def promt_llm(query):
             return ERROR_MESSAGES['RESOURCE_ERROR']
         else:
             return ERROR_MESSAGES['GENERAL_ERROR']
+
+def clear_conversation_memory():
+    """Clear the conversation memory"""
+    global memory
+    memory.clear()
+    return "Conversation memory cleared successfully."
+
+def get_conversation_memory():
+    """Get the current conversation memory"""
+    return memory.chat_memory.messages
 
 async def main():
     while True:
