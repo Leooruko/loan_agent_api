@@ -97,14 +97,14 @@ def health_check():
     return jsonify({
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "service": "GreenCom Loan Assistant API"
+        "service": "Brightcom Loan Assistant API"
     })
 
 @app.route("/api/info", methods=['GET'])
 def api_info():
     """API information endpoint"""
     return jsonify({
-        "name": "GreenCom Loan Assistant API",
+        "name": "Brightcom Loan Assistant API",
         "version": "1.0.0",
         "description": "AI-powered loan data analysis and insights",
         "capabilities": [

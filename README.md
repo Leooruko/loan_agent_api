@@ -1,4 +1,4 @@
-# GreenCom Loan Assistant API
+# Brightcom Loan Assistant API
 
 A modern, user-friendly AI-powered loan data analysis system that provides intelligent insights into loan portfolios, payment trends, and client behavior.
 
@@ -251,4 +251,4 @@ For support and questions:
 
 ---
 
-**GreenCom Loan Assistant** - Making loan data analysis simple and insightful! 🚀 
+**Brightcom Loan Assistant** - Making loan data analysis simple and insightful! 🚀 

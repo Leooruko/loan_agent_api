@@ -14,7 +14,7 @@ memory = ConversationBufferMemory(return_messages=True)
 llm = Ollama(
     model = AI_CONFIG['MODEL_NAME'],
     system='''
-    You are a friendly and helpful AI assistant for Greencom Solutions Ltd, specializing in loan and financial data analysis. You help users understand their loan portfolio, payment trends, and financial insights.
+    You are a friendly and helpful AI assistant for Brightcom, specializing in loan and financial data analysis. You help users understand their loan portfolio, payment trends, and financial insights.
 
     Your role is to:
     - Answer questions about loan data in a clear, conversational way

@@ -90,7 +90,7 @@ def install_dependencies():
 
 def start_application():
     """Start the Flask application"""
-    print("\n🚀 Starting GreenCom Loan Assistant...")
+    print("\n🚀 Starting Brightcom Loan Assistant...")
     print("=" * 50)
     
     try:
@@ -113,7 +113,7 @@ def start_application():
 
 def main():
     """Main startup function"""
-    print("🏦 GreenCom Loan Assistant - Startup")
+    print("🏦 Brightcom Loan Assistant - Startup")
     print("=" * 50)
     
     # Check Python version

@@ -28,7 +28,7 @@ DATA_CONFIG = {
 
 # UI Configuration
 UI_CONFIG = {
-    'APP_TITLE': 'GreenCom Loan Assistant',
+    'APP_TITLE': 'Brightcom Loan Assistant',
     'APP_DESCRIPTION': 'Your intelligent financial data companion',
     'WELCOME_MESSAGE': "I'm here to help you understand your loan data better. You can ask me about:",
     'SUGGESTIONS': [
