@@ -157,7 +157,7 @@ try:
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=False,
         handle_parsing_errors=True,
-        max_iterations=2
+        max_iterations=4
     )
 except Exception as e:
     logger.error(f"Agent initialization failed: {e}")
