@@ -145,22 +145,21 @@ tools = [
     )
 ]
 
-# Create agent executor with improved configuration
-agent_executor = AgentExecutor.from_agent_and_tools(
-    agent=initialize_agent(
+# Create agent executor with minimal configuration to avoid compatibility issues
+try:
+    # Use the simplest possible agent initialization
+    agent_executor = initialize_agent(
         tools=tools,
         llm=llm,
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=False,  # Reduce verbosity for better performance
+        verbose=False,
         handle_parsing_errors=True,
-        max_iterations=2  # Limit iterations to prevent loops
-    ),
-    tools=tools,
-    handle_parsing_errors=True,
-    verbose=False,
-    max_iterations=2,
-    early_stopping_method="generate"
-)
+        max_iterations=2
+    )
+except Exception as e:
+    logger.error(f"Agent initialization failed: {e}")
+    # Create a basic agent as fallback
+    agent_executor = None
 
 async def promt_llm(query, conversation_history=None):
     """
@@ -177,6 +176,10 @@ async def promt_llm(query, conversation_history=None):
         
         # Log the request
         logger.info(f"Processing query: {query[:100]}...")
+        
+        # Check if agent is available
+        if agent_executor is None:
+            return "I'm having trouble initializing the AI system. Please restart the application."
         
         # Use agent_executor with timeout
         try:
@@ -219,20 +222,14 @@ def clear_conversation_memory():
     try:
         # Reset agent executor to clear any internal state
         global agent_executor
-        agent_executor = AgentExecutor.from_agent_and_tools(
-            agent=initialize_agent(
-                tools=tools,
-                llm=llm,
-                agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-                verbose=False,
-                handle_parsing_errors=True,
-                max_iterations=2
-            ),
+        # Recreate the agent executor
+        agent_executor = initialize_agent(
             tools=tools,
-            handle_parsing_errors=True,
+            llm=llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
             verbose=False,
-            max_iterations=2,
-            early_stopping_method="generate"
+            handle_parsing_errors=True,
+            max_iterations=2
         )
         return "Conversation memory cleared successfully."
     except Exception as e:

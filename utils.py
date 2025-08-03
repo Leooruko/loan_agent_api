@@ -1,87 +1,67 @@
 from langchain_community.llms.ollama import Ollama
-from langchain.tools import Tool,tool
-from langchain.agents import initialize_agent,AgentExecutor,AgentType
+from langchain.tools import Tool, tool
+from langchain.agents import initialize_agent, AgentExecutor, AgentType
 from pandasql import sqldf
 import pandas as pd
 import re 
-from langchain.memory import ConversationBufferMemory
 import traceback
 import asyncio
+import logging
 from config import AI_CONFIG, DATA_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES
 
-memory = ConversationBufferMemory(return_messages=True)
+# Configure logging
+logger = logging.getLogger(__name__)
 
+# Initialize LLM with improved system prompt
 llm = Ollama(
-    model = AI_CONFIG['MODEL_NAME'],
+    model=AI_CONFIG['MODEL_NAME'],
     system='''
-    You are a friendly and helpful AI assistant for Brightcom, specialized in data analytics and mathematical reasoning. You are working with a processed dataset of loan clients and payments, including payment schedules and statuses.
-    
-    Your role is to:
-    - Understanding user queries, particularly those involving trends, anomalies, financial health, or optimization.
-    - Using mathematical reasoning (including proportional logic, ratios, expected value, deviation, etc.) to hypothesize and interpret results.
-    - Formulating SQL queries in DuckDB style using the table `df`.
-    - Using the `fetch_data` tool to get data.
-    - Analyzing and explaining results clearly, including any logical or mathematical insights.
-    - Recommending actions or observations based on patterns or hypothesis tests.
-    - Answer questions about loan data in a clear, conversational way
-    - Provide helpful insights about payment patterns, client behavior, and financial trends
-    - Use simple language and avoid technical jargon
-    - Be patient and explain complex concepts in easy-to-understand terms
+You are a helpful AI assistant for loan data analysis. Your job is to answer questions about loan portfolios, payments, and clients.
 
-    Workflow:
-    1. Interpret the user’s question and determine what data and logic are needed.
-    2. Formulate a valid SQL query over the `df` table.
-    3. Use the `fetch_data` tool with the query string as input.
-    4. Use mathematical or logical reasoning to evaluate the result.
-    5. Provide a clear answer and, if relevant, offer hypotheses, explanations, or recommendations.
+IMPORTANT RULES:
+1. ALWAYS use the fetch_data tool for ANY question about loan data
+2. Write simple SQL queries using the 'df' table
+3. Keep responses clear and helpful
+4. If asked about non-loan topics, politely redirect to loan questions
 
-    Response format:
-    If a tool is needed, follow this format:
-    Thought: ...
-    Action: fetch_data
-    Action Input: SELECT ... FROM df WHERE ...
+AVAILABLE DATA (table 'df'):
+- Managed_By: Loan manager name
+- Loan_No: Unique loan identifier  
+- Loan_Product_Type: Type of loan product
+- Client_Code: Unique client identifier
+- Client_Name: Client's name
+- Issued_Date: When loan was issued
+- Amount_Disbursed: Loan amount given to client
+- Installments: Total number of installments
+- Total_Paid: Amount client has paid so far
+- Total_Charged: Total amount owed (principal + interest)
+- Days_Since_Issued: Days since loan was issued
+- Is_Installment_Day: Whether today is a payment day
+- Weeks_Passed: Weeks since loan was issued
+- Installments_Expected: Expected payments by now
+- Installment_Amount: Amount per payment
+- Expected_Paid_Today: Expected payment for today
+- Expected_Before_Today: Expected total payments by now
+- Arrears: Unpaid amount
+- Due_Today: Amount due today
+- Mobile_Phone_No: Client's phone number
+- Status: Loan status (Active, Closed, etc.)
+- Client_Loan_Count: Total loans client has had
+- Client_Type: Individual or Group loan
 
-    If no tool is needed, just respond with:
-    Answer: ...
- 
-    Important guidelines:
-    - Only query the 'df' table
-    - Keep SQL queries simple and focused
-    - If a question isn't about loan data, say: "I'm here to help with loan and financial data questions. Could you ask me something about your loan portfolio, payments, or clients instead?"
-    - Always provide helpful context with your answers
-    - Use friendly, conversational language
+RESPONSE FORMAT:
+For loan data questions:
+1. Use fetch_data tool with SQL query
+2. Analyze the results
+3. Provide clear, helpful answer
 
-    Dataset Columns:
-    - Managed_By: Loan manager
-    - Loan_No: Unique loan ID
-    - Loan_Product_Type: Product type (e.g. "BIASHARA4W")
-    - Client_Code: Unique client ID
-    - Client_Name: Name of client
-    - Issued_Date: Date loan was issued
-    - Amount_Disbursed: Disbursed loan amount
-    - Installments: Number of installments
-    - Total_Paid: Total paid by client
-    - Total_Charged: Total owed (principal + interest)
-    - Days_Since_Issued: Days since loan was issued
-    - Is_Installment_Day: Whether today is an installment day
-    - Weeks_Passed: Weeks since issue
-    - Installments_Expected: Expected installments by now
-    - Installment_Amount: Expected amount per installment
-    - Expected_Paid_Today: Expected payment for today
-    - Expected_Before_Today: Expected cumulative payment
-    - Arrears: Unpaid amount
-    - Due_Today: Amount due today
-    - Mobile_Phone_No: Client’s phone
-    - Status: Loan status ("Active", "Closed", etc.)
-    - Client_Loan_Count: Total loans the client has had
-    - Client_Type: "Individual" or "Group"
+For non-loan questions:
+"I'm here to help with loan and financial data questions. Could you ask me something about your loan portfolio, payments, or clients instead?"
 
-    Example tool use:
-    Action: fetch_data  
-    Action Input: SELECT Client_Name, Total_Paid, Expected_Before_Today FROM df WHERE Status = 'Active';
-
-    Final Answer:  
-    Client John Doe has paid KES 20,000, which is KES 5,000 below the expected KES 25,000. This suggests a shortfall, possibly due to missed installments.
+EXAMPLE QUERIES:
+- "How many active loans?" → SELECT COUNT(*) FROM df WHERE Status = 'Active'
+- "Total portfolio value?" → SELECT SUM(Amount_Disbursed) FROM df WHERE Status = 'Active'
+- "Clients with high arrears?" → SELECT Client_Name, Arrears FROM df WHERE Arrears > 0 ORDER BY Arrears DESC LIMIT 10
 '''
 )
 
@@ -94,98 +74,97 @@ def fetch_data(query):
         query (str): SQL query to execute on the loan dataset
 
     Returns: 
-        pandas.DataFrame: Query results or error message if query fails
-        
-    Available data columns:
-    - Managed_By: Loan manager name
-    - Loan_No: Unique loan identifier
-    - Loan_Product_Type: Type of loan product
-    - Client_Code: Unique client identifier
-    - Client_Name: Client's name
-    - Issued_Date: When loan was issued
-    - Amount_Disbursed: Loan amount given to client
-    - Installments: Total number of installments
-    - Total_Paid: Amount client has paid so far
-    - Total_Charged: Total amount owed (principal + interest)
-    - Days_Since_Issued: Days since loan was issued
-    - Is_Installment_Day: Whether today is a payment day
-    - Weeks_Passed: Weeks since loan was issued
-    - Installments_Expected: Expected payments by now
-    - Installment_Amount: Amount per payment
-    - Expected_Paid_Today: Expected payment for today
-    - Expected_Before_Today: Expected total payments by now
-    - Arrears: Unpaid amount
-    - Due_Today: Amount due today
-    - Mobile_Phone_No: Client's phone number
-    - Status: Loan status (Active, Closed, etc.)
-    - Client_Loan_Count: Total loans client has had
-    - Client_Type: Individual or Group loan
+        str: Query results as formatted string or error message
     '''
     try:
         # Validate input
-        if not isinstance(query, str) or query.strip() == "":
-            return "I need a valid query to help you. Could you please rephrase your question?"
+        if not isinstance(query, str) or not query.strip():
+            return "Error: Please provide a valid SQL query."
         
         # Clean and validate query
         query = query.strip().strip("`").strip("'").strip('"')
         
+        # Security check - only allow SELECT queries
+        if not re.search(r'^SELECT\s+', query, re.IGNORECASE):
+            return "Error: Only SELECT queries are allowed for security reasons."
+        
         # Check for basic SQL structure
         if not re.search(r'SELECT\s+.*\s+FROM\s+df', query, re.IGNORECASE):
-            return "I can only help with questions about the loan data. Please ask about loans, payments, or clients."
+            return "Error: Query must select from the 'df' table."
         
         # Limit query complexity for safety
         if len(query) > AI_CONFIG['MAX_SQL_LENGTH']:
-            return ERROR_MESSAGES['COMPLEX_QUERY']
+            return "Error: Query is too complex. Please simplify your question."
         
         # Load data
         try:
             df = pd.read_csv(DATA_CONFIG['CSV_FILE_PATH'])
+            logger.info(f"Data loaded successfully. Shape: {df.shape}")
         except FileNotFoundError:
+            logger.error("Data file not found")
             return ERROR_MESSAGES['NO_DATA']
+        except Exception as e:
+            logger.error(f"Error loading data: {e}")
+            return "Error: Unable to load loan data. Please try again later."
         
         # Execute query
-        print(f"Executing query: {query}")
+        logger.info(f"Executing query: {query}")
         result = sqldf(query)
         
         # Handle empty results
         if result.empty:
-            return ERROR_MESSAGES['EMPTY_RESULTS']
+            return "No data found matching your query. Try rephrasing your question."
         
-        return result
+        # Format result as string
+        if len(result) <= 10:
+            # For small results, show full data
+            return f"Query Results:\n{result.to_string(index=False)}"
+        else:
+            # For large results, show summary
+            return f"Query Results (showing first 10 of {len(result)} rows):\n{result.head(10).to_string(index=False)}"
 
     except Exception as e:
+        logger.error(f"Error in fetch_data: {e}")
         error_msg = str(e).lower()
+        
         if "syntax" in error_msg or "invalid" in error_msg:
-            return ERROR_MESSAGES['INVALID_QUERY']
+            return "Error: Invalid SQL syntax. Please rephrase your question."
         elif "table" in error_msg or "column" in error_msg:
-            return ERROR_MESSAGES['INVALID_QUERY']
+            return "Error: Invalid table or column name. Please check your query."
+        elif "timeout" in error_msg:
+            return "Error: Query took too long. Please try a simpler question."
         else:
-            return ERROR_MESSAGES['GENERAL_ERROR']
-    
+            return f"Error: Unable to process query. Please try again."
 
-
+# Create tools list
 tools = [
-    Tool(name="fetch_data",func=fetch_data,description="Tool to query the only data to answer users questions")
+    Tool(
+        name="fetch_data",
+        func=fetch_data,
+        description="Use this tool to query loan data. Input should be a SQL SELECT statement using the 'df' table."
+    )
 ]
 
-# Create agent executor directly
-agent_executor = AgentExecutor.from_agent_and_tools(
-    agent=initialize_agent(
+# Create agent executor with minimal configuration to avoid compatibility issues
+try:
+    # Use the simplest possible agent initialization
+    agent_executor = initialize_agent(
         tools=tools,
         llm=llm,
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-        verbose=True,
-        handle_parsing_errors=True
-    ),
-    tools=tools,
-    handle_parsing_errors=True,
-    verbose=True,
-    max_iterations=3
-)
-
-
+        verbose=False,
+        handle_parsing_errors=True,
+        max_iterations=2
+    )
+except Exception as e:
+    logger.error(f"Agent initialization failed: {e}")
+    # Create a basic agent as fallback
+    agent_executor = None
 
 async def promt_llm(query, conversation_history=None):
+    """
+    Process user query and return AI response with improved error handling.
+    """
     try:
         # Validate input
         if not query or not query.strip():
@@ -195,11 +174,38 @@ async def promt_llm(query, conversation_history=None):
         if len(query) > AI_CONFIG['MAX_QUERY_LENGTH']:
             return ERROR_MESSAGES['COMPLEX_QUERY']
         
-        # Use agent_executor
-        response = agent_executor.invoke({"input": query})
-        return response["output"]
+        # Log the request
+        logger.info(f"Processing query: {query[:100]}...")
+        
+        # Check if agent is available
+        if agent_executor is None:
+            return "I'm having trouble initializing the AI system. Please restart the application."
+        
+        # Use agent_executor with timeout
+        try:
+            response = agent_executor.invoke({"input": query})
+            result = response.get("output", "No response generated")
+            
+            # Clean up the response
+            if isinstance(result, str):
+                # Remove any tool call artifacts
+                result = re.sub(r'Action:.*?Action Input:.*?Observation:.*?', '', result, flags=re.DOTALL)
+                result = result.strip()
+                
+                # If response is too short or seems like an error, provide a helpful message
+                if len(result) < 10 or "error" in result.lower():
+                    return "I'm having trouble understanding that question. Could you please ask about loans, payments, or clients in a different way?"
+                
+                return result
+            else:
+                return "I'm here to help with loan and financial data questions. What would you like to know about your loan portfolio?"
+                
+        except Exception as agent_error:
+            logger.error(f"Agent execution error: {agent_error}")
+            return ERROR_MESSAGES['GENERAL_ERROR']
+            
     except Exception as e:
-        print(f'Error processing query: {e}')
+        logger.error(f'Error processing query: {e}')
         traceback.print_exc()
         
         # Provide user-friendly error messages
@@ -213,21 +219,51 @@ async def promt_llm(query, conversation_history=None):
 
 def clear_conversation_memory():
     """Clear the conversation memory"""
-    # Temporarily disabled due to compatibility issues
-    return "Memory feature temporarily disabled for compatibility."
+    try:
+        # Reset agent executor to clear any internal state
+        global agent_executor
+        # Recreate the agent executor
+        agent_executor = initialize_agent(
+            tools=tools,
+            llm=llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=False,
+            handle_parsing_errors=True,
+            max_iterations=2
+        )
+        return "Conversation memory cleared successfully."
+    except Exception as e:
+        logger.error(f"Error clearing memory: {e}")
+        return "Memory cleared (with some issues)."
 
 def get_conversation_memory():
     """Get the current conversation memory"""
-    # Temporarily disabled due to compatibility issues
+    # Since we're using a simple agent without memory, return empty list
     return []
 
 async def main():
+    """Main function for testing the LLM interaction"""
+    print("Loan Assistant - Type 'exit' to quit")
+    print("=" * 50)
+    
     while True:
-        query = input("Ask about your data: ")
-        if query.lower() in ["exit", "quit"]:
+        try:
+            query = input("\nAsk about your loan data: ")
+            if query.lower() in ["exit", "quit"]:
+                break
+                
+            if not query.strip():
+                continue
+                
+            print("\nProcessing...")
+            response = await promt_llm(query)
+            print(f"\nAssistant: {response}")
+            
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
             break
-        response =await promt_llm(query)
-        print(response)
+        except Exception as e:
+            print(f"\nError: {e}")
 
 if __name__ == "__main__":
     asyncio.run(main())
