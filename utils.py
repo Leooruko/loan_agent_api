@@ -7,149 +7,128 @@ import re
 from langchain.memory import ConversationBufferMemory
 import traceback
 import asyncio
+from config import AI_CONFIG, DATA_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES
 
 memory = ConversationBufferMemory(return_messages=True)
 
 llm = Ollama(
-    model = "mistral",
+    model = AI_CONFIG['MODEL_NAME'],
     system='''
-    You are an AI assistant for Greencom Solutions Ltd, specialized in data analytics and mathematical reasoning. You are working with a processed dataset of loan clients and payments, including payment schedules and statuses.
+    You are a friendly and helpful AI assistant for Greencom Solutions Ltd, specializing in loan and financial data analysis. You help users understand their loan portfolio, payment trends, and financial insights.
 
-    Your tasks include:
-    - Understanding user queries, particularly those involving trends, anomalies, financial health, or optimization.
-    - Using mathematical reasoning (including proportional logic, ratios, expected value, deviation, etc.) to hypothesize and interpret results.
-    - Formulating SQL queries in DuckDB style using the table `df`.
-    - Using the `fetch_data` tool to get data.
-    - Analyzing and explaining results clearly, including any logical or mathematical insights.
-    - Recommending actions or observations based on patterns or hypothesis tests.
+    Your role is to:
+    - Answer questions about loan data in a clear, conversational way
+    - Provide helpful insights about payment patterns, client behavior, and financial trends
+    - Use simple language and avoid technical jargon
+    - Be patient and explain complex concepts in easy-to-understand terms
 
-    Workflow:
-    1. Interpret the user’s question and determine what data and logic are needed.
-    2. Formulate a valid SQL query over the `df` table.
-    3. Use the `fetch_data` tool with the query string as input.
-    4. Use mathematical or logical reasoning to evaluate the result.
-    5. Provide a clear answer and, if relevant, offer hypotheses, explanations, or recommendations.
+    When users ask questions:
+    1. If it's about loan data, use the fetch_data tool to get information
+    2. If it's not about loan data, politely redirect them to loan-related topics
+    3. Always provide context and explanations for your answers
+    4. Use friendly, encouraging language
 
-    When using a tool, respond with:
-    Action:\n fetch_data
-    Action Input:\n SELECT ... FROM df WHERE ...
+    Available data includes:
+    - Client information (names, phone numbers, loan counts)
+    - Loan details (amounts, installments, due dates)
+    - Payment status and arrears
+    - Loan managers and product types
+    - Payment schedules and expectations
 
-    After receiving the result, respond with:
-    Final Answer:\n <your reasoning, insight, or table>
-
-    Important Notes:
-    - You can ONLY query the table named `df`. All SQL queries must begin with `SELECT ... FROM df`.
-    - The SQL query must be a plain string (no backticks or quotes).
-    - Use the `fetch_data` tool only for data-related questions.
-    - If the question is not about the dataset, reply: "Sorry, the dataset does not contain information about that topic."
-    - Where applicable, apply concepts like:
-    - Deviation from expected behavior
-    - Ratio and proportionality (e.g., total paid vs expected)
-    - Prediction and estimation
-    - Group-based behavior comparison
-    - Time-based trends (e.g., weekly payment changes)
-    - Format DataFrame results clearly (Markdown-friendly tables). No inline JSON or object-like responses.
-
-    The `df` table contains the following columns. Only use these columns in your queries:
-    - Managed_By: Loan manager
-    - Loan_No: Unique loan ID
-    - Loan_Product_Type: Product type (e.g. "BIASHARA4W")
-    - Client_Code: Unique client ID
-    - Client_Name: Name of client
-    - Issued_Date: Date loan was issued
-    - Amount_Disbursed: Disbursed loan amount
-    - Installments: Number of installments
-    - Total_Paid: Total paid by client
-    - Total_Charged: Total owed (principal + interest)
-    - Days_Since_Issued: Days since loan was issued
-    - Is_Installment_Day: Whether today is an installment day
-    - Weeks_Passed: Weeks since issue
-    - Installments_Expected: Expected installments by now
-    - Installment_Amount: Expected amount per installment
-    - Expected_Paid_Today: Expected payment for today
-    - Expected_Before_Today: Expected cumulative payment
-    - Arrears: Unpaid amount
-    - Due_Today: Amount due today
-    - Mobile_Phone_No: Client’s phone
-    - Status: Loan status ("Active", "Closed", etc.)
-    - Client_Loan_Count: Total loans the client has had
-    - Client_Type: "Individual" or "Group"
-
-    Example tool use:
+    To query data, use:
     Action: fetch_data
-    Action Input: SELECT Client_Name, Total_Paid, Expected_Before_Today FROM df WHERE Status = 'Active';
+    Action Input: SELECT [columns] FROM df WHERE [conditions]
 
-    Final Answer:
-    Client John Doe has paid KES 20,000, which is KES 5,000 below the expected KES 25,000. This suggests a shortfall, possibly due to missed installments.
+    Important guidelines:
+    - Only query the 'df' table
+    - Keep SQL queries simple and focused
+    - If a question isn't about loan data, say: "I'm here to help with loan and financial data questions. Could you ask me something about your loan portfolio, payments, or clients instead?"
+    - Always provide helpful context with your answers
+    - Use friendly, conversational language
 
+    Example responses:
+    "Based on the data, I can see that [insight]. This suggests [explanation]."
+    "Let me check that for you... [data analysis]"
+    "I'd be happy to help with loan-related questions! What would you like to know about your loan portfolio?"
     '''
 )
 
 @tool
 def fetch_data(query):
     '''
-    Executes a DuckDB-style SQL query on pandas DataFrame  loaded from 'processed_data.csv'
-
-    This function is designed to be used by an agent  to retrieve data from a predefined CSV file .
-    The agent should formulate  a SQL query as a string  and pass it  to this tool. 
-    The table name within the query must be df
-
+    Executes SQL queries on loan data to help answer user questions about loans, payments, and clients.
 
     Args:
-        query: (str):A string containing  the SQL query to be executed.
-                     The query should be in Duckdb style and refer to the dataframe as 'df'.
+        query (str): SQL query to execute on the loan dataset
 
-        Returns: 
-            pandas.DataFrame: A dataframe  containing  the results of the query.
-            str: An error message if the  query is invalid, the CSV is not found, or another exception occurs.
+    Returns: 
+        pandas.DataFrame: Query results or error message if query fails
         
-    The `df` table contains the following columns. Only use these columns in your queries:
-    - Managed_By: Loan manager
-    - Loan_No: Unique loan ID
-    - Loan_Product_Type: Product type (e.g. "BIASHARA4W")
-    - Client_Code: Unique client ID
-    - Client_Name: Name of client
-    - Issued_Date: Date loan was issued
-    - Amount_Disbursed: Disbursed loan amount
-    - Installments: Number of installments
-    - Total_Paid: Total paid by client
-    - Total_Charged: Total owed (principal + interest)
+    Available data columns:
+    - Managed_By: Loan manager name
+    - Loan_No: Unique loan identifier
+    - Loan_Product_Type: Type of loan product
+    - Client_Code: Unique client identifier
+    - Client_Name: Client's name
+    - Issued_Date: When loan was issued
+    - Amount_Disbursed: Loan amount given to client
+    - Installments: Total number of installments
+    - Total_Paid: Amount client has paid so far
+    - Total_Charged: Total amount owed (principal + interest)
     - Days_Since_Issued: Days since loan was issued
-    - Is_Installment_Day: Whether today is an installment day
-    - Weeks_Passed: Weeks since issue
-    - Installments_Expected: Expected installments by now
-    - Installment_Amount: Expected amount per installment
+    - Is_Installment_Day: Whether today is a payment day
+    - Weeks_Passed: Weeks since loan was issued
+    - Installments_Expected: Expected payments by now
+    - Installment_Amount: Amount per payment
     - Expected_Paid_Today: Expected payment for today
-    - Expected_Before_Today: Expected cumulative payment
+    - Expected_Before_Today: Expected total payments by now
     - Arrears: Unpaid amount
     - Due_Today: Amount due today
-    - Mobile_Phone_No: Client’s phone
-    - Status: Loan status ("Active", "Closed", etc.)
-    - Client_Loan_Count: Total loans the client has had
-    - Client_Type: "Individual" or "Group"
-
-    Example for Agent:
-        Action: fetch_data
-        Action Input: SELECT "Client_Name", "Total_Paid" FROM df WHERE "Status" = 'Active'
-    
+    - Mobile_Phone_No: Client's phone number
+    - Status: Loan status (Active, Closed, etc.)
+    - Client_Loan_Count: Total loans client has had
+    - Client_Type: Individual or Group loan
     '''
     try:
+        # Validate input
         if not isinstance(query, str) or query.strip() == "":
-            return "Error: Query must be a non-empty string."
-        query = query.strip().strip("`").strip("'").strip('"')
-        match = re.search(r'(SELECT .*?FROM .*?)(?:;|\n|$)', query, re.IGNORECASE | re.DOTALL)
-        if match:
-            query = match.group(1).strip()
-        else:
-            return "Error: Could not parse a valid SQL query."
+            return "I need a valid query to help you. Could you please rephrase your question?"
         
-        df = pd.read_csv("processed_data.csv")
-        print("Executing: ",query)
+        # Clean and validate query
+        query = query.strip().strip("`").strip("'").strip('"')
+        
+        # Check for basic SQL structure
+        if not re.search(r'SELECT\s+.*\s+FROM\s+df', query, re.IGNORECASE):
+            return "I can only help with questions about the loan data. Please ask about loans, payments, or clients."
+        
+        # Limit query complexity for safety
+        if len(query) > AI_CONFIG['MAX_SQL_LENGTH']:
+            return ERROR_MESSAGES['COMPLEX_QUERY']
+        
+        # Load data
+        try:
+            df = pd.read_csv(DATA_CONFIG['CSV_FILE_PATH'])
+        except FileNotFoundError:
+            return ERROR_MESSAGES['NO_DATA']
+        
+        # Execute query
+        print(f"Executing query: {query}")
         result = sqldf(query)
+        
+        # Handle empty results
+        if result.empty:
+            return ERROR_MESSAGES['EMPTY_RESULTS']
+        
         return result
 
     except Exception as e:
-        return f"Error fetching data: {e}"   
+        error_msg = str(e).lower()
+        if "syntax" in error_msg or "invalid" in error_msg:
+            return ERROR_MESSAGES['INVALID_QUERY']
+        elif "table" in error_msg or "column" in error_msg:
+            return ERROR_MESSAGES['INVALID_QUERY']
+        else:
+            return ERROR_MESSAGES['GENERAL_ERROR']
     
 
 
@@ -172,12 +151,28 @@ agent_executor = AgentExecutor.from_agent_and_tools(agent,tools=tools,handle_par
 
 async def promt_llm(query):
     try:
+        # Validate input
+        if not query or not query.strip():
+            return SUCCESS_MESSAGES['WELCOME']
+        
+        # Check if query is too long
+        if len(query) > AI_CONFIG['MAX_QUERY_LENGTH']:
+            return ERROR_MESSAGES['COMPLEX_QUERY']
+        
         response = agent.invoke(query)
         return response["output"]
     except Exception as e:
-        print(f'error as {e}')
+        print(f'Error processing query: {e}')
         traceback.print_exc()
-        return f"Error on promt: {e}"
+        
+        # Provide user-friendly error messages
+        error_msg = str(e).lower()
+        if "timeout" in error_msg or "connection" in error_msg:
+            return ERROR_MESSAGES['TIMEOUT']
+        elif "memory" in error_msg or "resource" in error_msg:
+            return ERROR_MESSAGES['RESOURCE_ERROR']
+        else:
+            return ERROR_MESSAGES['GENERAL_ERROR']
 
 async def main():
     while True:
