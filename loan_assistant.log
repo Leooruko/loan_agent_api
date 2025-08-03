@@ -4,3 +4,20 @@
  * Running on http://192.168.1.32:5500
 2025-08-03 07:38:48,386 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
 2025-08-03 07:38:48,388 - werkzeug - INFO -  * Restarting with stat
+2025-08-03 07:38:51,509 - werkzeug - WARNING -  * Debugger is active!
+2025-08-03 07:38:51,514 - werkzeug - INFO -  * Debugger PIN: 167-905-454
+2025-08-03 07:40:02,078 - werkzeug - INFO - 127.0.0.1 - - [03/Aug/2025 07:40:02] "GET / HTTP/1.1" 200 -
+2025-08-03 07:40:02,375 - werkzeug - INFO - 127.0.0.1 - - [03/Aug/2025 07:40:02] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2025-08-03 07:40:16,838 - __main__ - INFO - Processing chat request: Goodmorning...
+2025-08-03 07:42:51,722 - __main__ - INFO - Chat response generated successfully
+2025-08-03 07:42:51,724 - werkzeug - INFO - 127.0.0.1 - - [03/Aug/2025 07:42:51] "POST /chat HTTP/1.1" 200 -
+2025-08-03 07:56:36,664 - werkzeug - INFO - 127.0.0.1 - - [03/Aug/2025 07:56:36] "GET / HTTP/1.1" 200 -
+2025-08-03 07:56:47,076 - __main__ - INFO - Processing chat request: Good morning...
+2025-08-03 07:58:56,074 - werkzeug - INFO - 127.0.0.1 - - [03/Aug/2025 07:58:56] "GET / HTTP/1.1" 200 -
+2025-08-03 07:59:06,306 - __main__ - INFO - Processing chat request: Goodmorning...
+2025-08-03 08:01:42,584 - __main__ - INFO - Chat response generated successfully
+2025-08-03 08:01:42,586 - werkzeug - INFO - 127.0.0.1 - - [03/Aug/2025 08:01:42] "POST /chat HTTP/1.1" 200 -
+2025-08-03 08:01:52,354 - __main__ - INFO - Chat response generated successfully
+2025-08-03 08:01:52,355 - werkzeug - INFO - 127.0.0.1 - - [03/Aug/2025 08:01:52] "POST /chat HTTP/1.1" 200 -
+2025-08-03 08:29:40,827 - werkzeug - INFO -  * Detected change in 'C:\\Users\\loruko\\Workspace\\llm\\agent_api\\utils.py', reloading
+2025-08-03 08:29:41,244 - werkzeug - INFO -  * Restarting with stat
