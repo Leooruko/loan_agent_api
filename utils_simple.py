@@ -1,6 +1,7 @@
 from langchain_community.llms.ollama import Ollama
 from langchain.tools import Tool, tool
 from langchain.agents import initialize_agent, AgentExecutor, AgentType
+from langchain.memory import ConversationBufferMemory
 from pandasql import sqldf
 import pandas as pd
 import re 
@@ -11,6 +12,13 @@ from config import AI_CONFIG, DATA_CONFIG, ERROR_MESSAGES, SUCCESS_MESSAGES
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Initialize conversation memory
+conversation_memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True,
+    input_key="input"
+)
 
 # Initialize LLM with improved system prompt
 llm = Ollama(
@@ -23,6 +31,8 @@ IMPORTANT RULES:
 2. Write simple SQL queries using the 'df' table
 3. Keep responses clear and helpful
 4. If asked about non-loan topics, politely redirect to loan questions
+5. Remember previous conversation context and build on it
+6. If user refers to previous results, use that context in your response
 
 AVAILABLE DATA (table 'df'):
 - Managed_By: Loan manager name
@@ -56,6 +66,7 @@ For loan data questions:
 1. Use fetch_data tool with SQL query
 2. Analyze the results
 3. Provide clear, helpful answer
+4. Reference previous conversation if relevant
 
 For non-loan questions:
 "I'm here to help with loan and financial data questions. Could you ask me something about your loan portfolio, payments, or clients instead?"
@@ -148,16 +159,17 @@ tools = [
     )
 ]
 
-# Create agent executor with minimal configuration to avoid compatibility issues
+# Create agent executor with memory
 try:
-    # Use the simplest possible agent initialization
+    # Use agent initialization with memory
     agent_executor = initialize_agent(
         tools=tools,
         llm=llm,
-        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,  # Use conversational agent for memory
         verbose=False,
         handle_parsing_errors=True,
-        max_iterations=4
+        max_iterations=4,
+        memory=conversation_memory
     )
 except Exception as e:
     logger.error(f"Agent initialization failed: {e}")
@@ -166,7 +178,7 @@ except Exception as e:
 
 async def promt_llm(query, conversation_history=None):
     """
-    Process user query and return AI response with improved error handling.
+    Process user query and return AI response with improved error handling and memory.
     """
     try:
         # Validate input
@@ -223,16 +235,19 @@ async def promt_llm(query, conversation_history=None):
 def clear_conversation_memory():
     """Clear the conversation memory"""
     try:
-        # Reset agent executor to clear any internal state
-        global agent_executor
-        # Recreate the agent executor
+        # Reset conversation memory
+        global conversation_memory, agent_executor
+        conversation_memory.clear()
+        
+        # Recreate the agent executor with fresh memory
         agent_executor = initialize_agent(
             tools=tools,
             llm=llm,
-            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
             verbose=False,
             handle_parsing_errors=True,
-            max_iterations=2
+            max_iterations=4,
+            memory=conversation_memory
         )
         return "Conversation memory cleared successfully."
     except Exception as e:
@@ -241,8 +256,14 @@ def clear_conversation_memory():
 
 def get_conversation_memory():
     """Get the current conversation memory"""
-    # Since we're using a simple agent without memory, return empty list
-    return []
+    try:
+        if hasattr(conversation_memory, 'chat_memory'):
+            return conversation_memory.chat_memory.messages
+        else:
+            return []
+    except Exception as e:
+        logger.error(f"Error getting memory: {e}")
+        return []
 
 async def main():
     """Main function for testing the LLM interaction"""
