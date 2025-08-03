@@ -168,16 +168,20 @@ tools = [
     Tool(name="fetch_data",func=fetch_data,description="Tool to query the only data to answer users questions")
 ]
 
-agent = initialize_agent(
+# Create agent executor directly
+agent_executor = AgentExecutor.from_agent_and_tools(
+    agent=initialize_agent(
+        tools=tools,
+        llm=llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        handle_parsing_errors=True
+    ),
     tools=tools,
-    llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    handle_parsing_errors=True,
     verbose=True,
-    handle_parsing_errors=True,    
-    # max_iterations=1,
-    memory=memory
+    max_iterations=3
 )
-agent_executor = AgentExecutor.from_agent_and_tools(agent,tools=tools,handle_parsing_errors=True,)
 
 
 
@@ -191,7 +195,7 @@ async def promt_llm(query, conversation_history=None):
         if len(query) > AI_CONFIG['MAX_QUERY_LENGTH']:
             return ERROR_MESSAGES['COMPLEX_QUERY']
         
-        # Use agent_executor which has memory properly configured
+        # Use agent_executor
         response = agent_executor.invoke({"input": query})
         return response["output"]
     except Exception as e:
@@ -209,13 +213,13 @@ async def promt_llm(query, conversation_history=None):
 
 def clear_conversation_memory():
     """Clear the conversation memory"""
-    global memory
-    memory.clear()
-    return "Conversation memory cleared successfully."
+    # Temporarily disabled due to compatibility issues
+    return "Memory feature temporarily disabled for compatibility."
 
 def get_conversation_memory():
     """Get the current conversation memory"""
-    return memory.chat_memory.messages
+    # Temporarily disabled due to compatibility issues
+    return []
 
 async def main():
     while True:

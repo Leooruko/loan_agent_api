@@ -3,5 +3,4 @@ langchain==0.0.350
 langchain-community==0.0.10
 pandas==2.1.1
 pandasql==0.7.3
-requests==2.31.0
-asyncio 
+requests==2.31.0 

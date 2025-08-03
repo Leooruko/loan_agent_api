@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import requests
-from utils import promt_llm, clear_conversation_memory, get_conversation_memory
+from utils_simple import promt_llm, clear_conversation_memory, get_conversation_memory
 import asyncio
 import logging
 from datetime import datetime
