@@ -33,8 +33,8 @@ AVAILABLE DATA (table 'df'):
 - Issued_Date: When loan was issued
 - Amount_Disbursed: Loan amount given to client
 - Installments: Total number of installments
-- Total Paid: Amount client has paid so far
-- Total Charged: Total amount owed (principal + interest)
+- Total Paid: Amount client has paid so far (use backticks: `Total Paid`)
+- Total Charged: Total amount owed (principal + interest) (use backticks: `Total Charged`)
 - Days_Since_Issued: Days since loan was issued
 - Is_Installment_Day: Whether today is a payment day
 - Weeks_Passed: Weeks since loan was issued
@@ -49,6 +49,8 @@ AVAILABLE DATA (table 'df'):
 - Client_Loan_Count: Total loans client has had
 - Client_Type: Individual or Group loan
 
+IMPORTANT: Column names with spaces must be enclosed in backticks (`) in SQL queries.
+
 RESPONSE FORMAT:
 For loan data questions:
 1. Use fetch_data tool with SQL query
@@ -62,6 +64,7 @@ EXAMPLE QUERIES:
 - "How many active loans?" → SELECT COUNT(*) FROM df WHERE Status = 'Active'
 - "Total portfolio value?" → SELECT SUM(Amount_Disbursed) FROM df WHERE Status = 'Active'
 - "Clients with high arrears?" → SELECT Client_Name, Arrears FROM df WHERE Arrears > 0 ORDER BY Arrears DESC LIMIT 10
+- "Total payments by manager?" → SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC
 '''
 )
 
@@ -141,7 +144,7 @@ tools = [
     Tool(
         name="fetch_data",
         func=fetch_data,
-        description="Use this tool to query loan data. Input should be a SQL SELECT statement using the 'df' table."
+        description="Use this tool to query loan data. Input should be a SQL SELECT statement using the 'df' table. Note: Column names with spaces must be enclosed in backticks (e.g., `Total Paid`, `Total Charged`)."
     )
 ]
 
