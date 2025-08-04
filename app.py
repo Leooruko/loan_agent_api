@@ -167,16 +167,18 @@ async def chat():
         
         # Process the request with timeout
         try:
+            # Use a more generous timeout for AI processing
             response = await asyncio.wait_for(
                 promt_llm(query=prompt), 
-                timeout=AI_CONFIG['TIMEOUT_SECONDS']
+                timeout=AI_CONFIG['REQUEST_TIMEOUT']
             )
         except asyncio.TimeoutError:
-            logger.warning(f"Request timeout for client {client_ip}")
+            logger.warning(f"Request timeout for client {client_ip} after {AI_CONFIG['REQUEST_TIMEOUT']}s")
             return jsonify({
                 "error": "Request timeout",
                 "message": ERROR_MESSAGES['TIMEOUT'],
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "timeout_seconds": AI_CONFIG['REQUEST_TIMEOUT']
             }), 408
         
         # Log response time

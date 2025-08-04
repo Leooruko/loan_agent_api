@@ -17,9 +17,10 @@ AI_CONFIG = {
     'MODEL_NAME': 'mistral',
     'MAX_QUERY_LENGTH': 500,  # Reduced for better performance
     'MAX_SQL_LENGTH': 300,    # Reduced for security and performance
-    'TIMEOUT_SECONDS': 60,    # Increased timeout for complex queries
-    'MAX_ITERATIONS': 56,      # Increased for better answer refinement
-    'TEMPERATURE': 0.1        # Lower temperature for more consistent responses
+    'TIMEOUT_SECONDS': 90,    # Increased timeout for complex queries (90 seconds)
+    'MAX_ITERATIONS': 6,      # Reduced to prevent excessive processing time
+    'TEMPERATURE': 0.1,       # Lower temperature for more consistent responses
+    'REQUEST_TIMEOUT': 100    # Total request timeout including processing
 }
 
 # Data Configuration

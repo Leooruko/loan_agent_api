@@ -130,12 +130,12 @@ def fetch_data(query):
             return "No data found matching your query. Try rephrasing your question."
         
         # Format result as string
-        if len(result) <= 10:
+        if len(result) <= DATA_CONFIG['MAX_ROWS_DISPLAY']:
             # For small results, show full data
             return f"Query Results:\n{result.to_string(index=False)}"
         else:
             # For large results, show summary
-            return f"Query Results (showing first 10 of {len(result)} rows):\n{result.head(10).to_string(index=False)}"
+            return f"Query Results (showing first {DATA_CONFIG['MAX_ROWS_DISPLAY']} rows):\n{result.head(DATA_CONFIG['MAX_ROWS_DISPLAY']).to_string(index=False)}"
 
     except Exception as e:
         logger.error(f"Error in fetch_data: {e}")
