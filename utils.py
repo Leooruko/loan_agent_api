@@ -168,7 +168,7 @@ try:
         agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,  # Use conversational agent for memory
         verbose=False,
         handle_parsing_errors=True,
-        max_iterations=4,
+        max_iterations=AI_CONFIG['MAX_ITERATIONS'],
         memory=conversation_memory
     )
 except Exception as e:
@@ -246,7 +246,7 @@ def clear_conversation_memory():
             agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
             verbose=False,
             handle_parsing_errors=True,
-            max_iterations=4,
+            max_iterations=AI_CONFIG['MAX_ITERATIONS'],
             memory=conversation_memory
         )
         return "Conversation memory cleared successfully."

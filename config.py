@@ -18,7 +18,7 @@ AI_CONFIG = {
     'MAX_QUERY_LENGTH': 500,  # Reduced for better performance
     'MAX_SQL_LENGTH': 300,    # Reduced for security and performance
     'TIMEOUT_SECONDS': 60,    # Increased timeout for complex queries
-    'MAX_ITERATIONS': 2,      # Limit agent iterations
+    'MAX_ITERATIONS': 6,      # Increased for better answer refinement
     'TEMPERATURE': 0.1        # Lower temperature for more consistent responses
 }
 
