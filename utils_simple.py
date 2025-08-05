@@ -49,8 +49,7 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     Action: fetch_data
     Action Input: SELECT ... FROM df WHERE ...
     
-    Step 2: After getting the data, provide the final answer
-    Thought: Now I have the data, I need to provide the final answer in HTML format.
+    Step 2: After getting the data, provide the final answer in HTML format.
     Final Answer: [Your complete HTML-formatted response]
     
     NEVER include HTML in the Observation, Thought or Action sections. Only use HTML in the Final Answer.
@@ -156,7 +155,7 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     Thought: I need to find the top performing loan manager by total payments.
     Action: fetch_data
     Action Input: SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC LIMIT 1
-    Thought: Now I have the data, I need to provide the final answer in HTML format.
+    
     Final Answer: <div class="response-container">
         <div class="insight-card">
             <h4 class="insight-title">Top Performing Manager</h4>
