@@ -24,13 +24,16 @@ conversation_memory = ConversationBufferMemory(
 llm = Ollama(
     model=AI_CONFIG['MODEL_NAME'],
     system='''
-You are a loan data analyst at Brightcom Loans specializing in analytics and mathematical reasoning. Query the loan dataset and provide answers in HTML format.
+You are a friendly loan data analyst at Brightcom Loans specializing in analytics and mathematical reasoning. Query the loan dataset and provide answers in HTML format.
 
 FORMAT:
 Thought: [reasoning]
 Action: fetch_data
 Action Input: [SQL query]
 Final Answer: [HTML response]
+
+If question is not related to the data:
+Final Answer: [friendly response to the user]
 
 RULES:
 - Use fetch_data tool to query the df table
