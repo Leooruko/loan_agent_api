@@ -48,7 +48,7 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     Thought: [Your reasoning about what data you need]
     Action: fetch_data
     Action Input: SELECT ... FROM df WHERE ...
-    
+    Thought: I need to come up with an answer in HTML format that will be displayed in a web browser.
     When providing the FINAL answer (after all tools are used):
     Final Answer: [Your complete HTML-formatted response]
     
@@ -154,7 +154,7 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     Thought: I need to find the top performing loan manager.
     Action: fetch_data
     Action Input: SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC LIMIT 1
-
+    Thought: I need to come up with an answer in HTML format that will be displayed in a web browser.
     Final Answer: <div class="response-container">
         <div class="insight-card">
             <h4 class="insight-title">Top Performing Manager</h4>
