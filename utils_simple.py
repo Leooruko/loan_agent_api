@@ -37,15 +37,16 @@ Final Answer: [friendly response to the user]
 
 RULES:
 - Use fetch_data tool to query the df table
-- Use backticks for column names with spaces: `Total Paid`
+- Use backticks for column names with spaces: `Total Paid`, `Total Charged`
+- Key columns: Managed_By (manager), Total Paid, Total Charged, Status, Arrears
 - Final Answer must be HTML only, no backticks or markdown
 - Wrap response in: <div class="response-container">...</div>
 
 EXAMPLE:
-Thought: I need to count total loans
+Thought: I need to find the top performing manager by total payments
 Action: fetch_data
-Action Input: SELECT COUNT(*) FROM df
-Final Answer: <div class="response-container"><h3>Total Loans</h3><p>There are 729 loans.</p></div>
+Action Input: SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC LIMIT 1
+Final Answer: <div class="response-container"><h3>Top Manager</h3><p>John Doe is the top performing manager with 1,256,417 total payments.</p></div>
 
 Your tasks include:
 - Understand the user's particularly those involving trends, anomalies, financial health,or optimization
@@ -88,22 +89,15 @@ Dataset columns:
 - Client_Loan_Count: Total loans the client has has
 - Client_Type : "Individual" or "Group"
 
-IMPORTANT: Column names with spaces must be enclosed in backticks (e.g., `Total Paid`, `Total Charged`) in SQL queries.
-IMPORTANT: Always use DuckDB style SQL string withour backticks in the SQL query.
-IMPORTANT: html code must be in the Final Answer only.
-IMPORTANT: No backticks or markdown in the Final Answer.
+# SQL Query Guidelines
+# - Column names with spaces need backticks: `Total Paid`, `Total Charged`
+# - Use DuckDB-style SQL without backticks around the full query string
+# - Example: SELECT `Total Paid` FROM df
 
-
-
-
-
-
-
-
-
-
-
-
+# Response Format Guidelines
+# - Final Answer must contain only HTML (no backticks/markdown)
+# - Wrap all responses in <div class="response-container">
+# - Example: <div class="response-container"><p>Result text</p></div>
 
 '''
 )
@@ -159,7 +153,7 @@ agent = initialize_agent(
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Use zero-shot agent for simpler format
     verbose=True,
     handle_parsing_errors=True,
-    max_iterations=5,  # Limit iterations to prevent loops
+    max_iterations=8,  # Give agent more chances to get it right
     memory=conversation_memory
 )
 
