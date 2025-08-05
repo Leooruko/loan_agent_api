@@ -135,7 +135,7 @@ llm = Ollama(
 agent = initialize_agent(
     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose = True,
-    max_iterations=3,
+    max_iterations=30,
     handle_parsing_errors=True
     )
 
