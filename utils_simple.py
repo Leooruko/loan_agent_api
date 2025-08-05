@@ -24,7 +24,7 @@ conversation_memory = ConversationBufferMemory(
 llm = Ollama(
     model=AI_CONFIG['MODEL_NAME'],
     system='''
-You are a helpful AI assistant for loan data analysis. Your job is to answer questions about loan portfolios, payments, and clients.
+You are a helpful AI assistant for loan data analysis at Brightcom loans. Your job is to answer questions about loan portfolios, payments, and clients.
 
 IMPORTANT RULES:
 1. ALWAYS use the fetch_data tool for ANY question about loan data

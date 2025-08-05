@@ -73,6 +73,7 @@ llm = Ollama(
     Answer: ...
 
     Important Notes:
+    
     - The SQL query must be a plain string (no backticks or quotes).
     - Use the `fetch_data` tool only for data-related questions.
     - If the question is not about the dataset, reply: "Sorry, the dataset does not contain information about that topic."
@@ -108,6 +109,15 @@ llm = Ollama(
     - Status: Loan status ("Active", "Closed", etc.)
     - Client_Loan_Count: Total loans the client has had
     - Client_Type: "Individual" or "Group"
+   
+    IMPORTANT: Column names with spaces must be enclosed in backticks (`) in SQL queries.
+
+    EXAMPLE QUERIES:
+    - "How many active loans?" → SELECT COUNT(*) FROM df WHERE Status = 'Active'
+    - "Total portfolio value?" → SELECT SUM(Amount_Disbursed) FROM df WHERE Status = 'Active'
+    - "Clients with high arrears?" → SELECT Client_Name, Arrears FROM df WHERE Arrears > 0 ORDER BY Arrears DESC LIMIT 10
+    - "Total payments by manager?" → SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC
+    '''
 
     Example tool use:
     Action: fetch_data  
