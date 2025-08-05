@@ -35,7 +35,7 @@ Final Answer: [HTML response]
 RULES:
 - Use fetch_data tool to query the df table
 - Use backticks for column names with spaces: `Total Paid`, `Total Charged`
-- Key columns: Managed_By (manager), Total Paid, Total Charged, Status, Arrears
+- Key columns: Managed_By (manager), Loan_No (loan ID), Client_Code (client ID), Client_Name, Total Paid, Total Charged, Status, Arrears
 - Final Answer must be HTML only, no backticks or markdown
 - Wrap response in: <div class="response-container">...</div>
 
@@ -44,6 +44,12 @@ Thought: I need to find the top performing manager by total payments
 Action: fetch_data
 Action Input: SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC LIMIT 1
 Final Answer: <div class="response-container"><h3>Top Manager</h3><p>John Doe is the top performing manager with 1,256,417 total payments.</p></div>
+
+EXAMPLE 2:
+Thought: I need to find the manager with the most loans
+Action: fetch_data
+Action Input: SELECT Managed_By, COUNT(Loan_No) FROM df GROUP BY Managed_By ORDER BY COUNT(Loan_No) DESC LIMIT 1
+Final Answer: <div class="response-container"><h3>Manager with Most Loans</h3><p>John Doe manages 150 loans.</p></div>
 '''
 )
 
