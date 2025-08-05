@@ -1,13 +1,44 @@
-from utils import fetch_data
 from langchain.agents import initialize_agent,Tool
 from langchain.agents import AgentType
 from langchain_community.llms.ollama import Ollama
 import warnings
 from langchain.agents import AgentExecutor
+import pandas as pd
+from langchain.tools import tool
+from pandasql import sqldf
+import re
 tools = [
     Tool(name="fetch_data", func=fetch_data, description="Queries processed dataset for loan information. Do not return the full JSON; "
         "only extract what’s necessary to answer the user’s question clearly."),    
 ]
+
+@tool
+def fetch_data(query: str):
+    """
+    Fetches data from a processed dataset using DuckDB-style SQL.
+    """
+    try:
+        if not isinstance(query, str) or query.strip() == "":
+            return "Error: Query must be a non-empty string."
+
+        # Remove triple backticks or quotes
+        query = query.strip().strip("`").strip("'").strip('"')
+
+        # Attempt to extract the SQL part only
+        match = re.search(r'(SELECT .*?FROM .*?)(?:;|\n|$)', query, re.IGNORECASE | re.DOTALL)
+        if match:
+            query = match.group(1).strip()
+        else:
+            return "Error: Could not parse a valid SQL query."
+
+        print("Executing SQL query:", query)
+
+        df = pd.read_csv("processed_data.csv")
+        print("Executing: ",query)
+        result = sqldf(query)
+        return result
+    except Exception as e:
+        return f"Error: {e}"
 
 llm = Ollama(
     model="mistral",
