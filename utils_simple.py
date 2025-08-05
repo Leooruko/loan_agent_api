@@ -24,61 +24,25 @@ conversation_memory = ConversationBufferMemory(
 llm = Ollama(
     model=AI_CONFIG['MODEL_NAME'],
     system='''
-You are an AI assistant working for Brightcom Loans Ltd. Your role is to assist with analytics on client loan and payment data. You use mathematical and logical reasoning to explain loan trends, behavior, and performance insights.
+You are a loan data analyst. Query the loan dataset and provide answers in HTML format.
 
-You interact with a loan dataset loaded in a table named `df`.
+FORMAT:
+Thought: [reasoning]
+Action: fetch_data
+Action Input: [SQL query]
+Final Answer: [HTML response]
 
-Your process:
-1. Understand the user's question and determine what data is needed.
-2. Use SQL (DuckDB style) to query the `df` table via the `fetch_data` tool.
-3. Analyze the returned data using basic math, ratios, deviations, or comparisons.
-4. Respond with clear, user-friendly explanations formatted in safe HTML.
+RULES:
+- Use fetch_data tool to query the df table
+- Use backticks for column names with spaces: `Total Paid`
+- Final Answer must be HTML only, no backticks or markdown
+- Wrap response in: <div class="response-container">...</div>
 
-Use the format below when responding:
-
----
-
-Thought: What do I need to find or calculate?
-
-Action: fetch_data  
-Action Input: SELECT ... FROM df WHERE ...
-
-(Wait for Observation from tool)
-
-Then continue with:
-
-Final Answer: <div class="response-container">...</div>
-
----
-
-💡 Important rules:
-- Only use the `fetch_data` tool to query the data.
-- Only query the table `df`.
-- Use backticks (\`) to wrap column names with spaces.
-- If the user's question is unrelated to the dataset, reply:  
-  "Sorry, I can only help with questions about the loan data."
-
-🎯 Use safe HTML in **Final Answer** only:
-- Wrap answers in: `<div class="response-container">...</div>`
-- Use: `<h3>`, `<p>`, `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>`, `<ul>`, `<li>`
-- Never use `<script>`, `onclick`, or JavaScript.
-- NEVER use backticks, code blocks, or markdown around Final Answer
-- Final Answer must be plain HTML only, no formatting
-- DO NOT add extra text before or after the HTML
-- DO NOT explain what you're doing in the Final Answer
-
-💬 Example:
-
-Thought: I need to find the top 3 managers by total paid amount.
-
-Action: fetch_data  
-Action Input: SELECT Managed_By, SUM(`Total Paid`) as total FROM df GROUP BY Managed_By ORDER BY total DESC LIMIT 3
-
-Final Answer: <div class="response-container">
-  <h3 class="section-title">Top Performing Managers</h3>
-  <p>Jane Doe is the top performing manager with 1,250,000 total payments.</p>
-</div>
-
+EXAMPLE:
+Thought: I need to count total loans
+Action: fetch_data
+Action Input: SELECT COUNT(*) FROM df
+Final Answer: <div class="response-container"><h3>Total Loans</h3><p>There are 729 loans.</p></div>
 '''
 )
 
@@ -130,10 +94,10 @@ tools = [
 agent = initialize_agent(
     tools=tools,
     llm=llm,
-    agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,  # Use conversational agent for memory
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Use zero-shot agent for simpler format
     verbose=True,
     handle_parsing_errors=True,
-    # max_iterations=AI_CONFIG['MAX_ITERATIONS'],
+    max_iterations=5,  # Limit iterations to prevent loops
     memory=conversation_memory
 )
 
@@ -150,10 +114,6 @@ async def promt_llm(query, conversation_history=None):
         result = response.get("output", "No response generated")
         
         if isinstance(result, str):
-            # Remove any tool call artifacts and extract only the final answer
-            result = re.sub(r'Action:.*?Action Input:.*?Observation:.*?', '', result, flags=re.DOTALL)
-            result = re.sub(r'Thought:.*?Action:.*?Action Input:.*?Observation:.*?', '', result, flags=re.DOTALL)
-            
             # Look for "Final Answer:" and extract everything after it
             final_answer_match = re.search(r'Final Answer:\s*(.*)', result, re.DOTALL)
             if final_answer_match:
@@ -162,24 +122,27 @@ async def promt_llm(query, conversation_history=None):
                 result = re.sub(r'^```.*?\n', '', result, flags=re.DOTALL)
                 result = re.sub(r'\n```$', '', result, flags=re.DOTALL)
                 result = re.sub(r'^`|`$', '', result)
-                # Remove any remaining backticks and code blocks
-                result = re.sub(r'^`|`$', '', result)
                 result = re.sub(r'```.*?```', '', result, flags=re.DOTALL)
                 result = re.sub(r'^`|`$', '', result)
                 # Remove any text before the first HTML tag
                 html_start = result.find('<')
                 if html_start > 0:
                     result = result[html_start:]
+                # Remove any text after the last HTML tag
+                html_end = result.rfind('>')
+                if html_end > 0:
+                    result = result[:html_end + 1]
             else:
-                # If no "Final Answer:" found, clean up the result
-                result = result.strip()
-                # Remove any remaining Thought/Action patterns
-                result = re.sub(r'Thought:.*?$', '', result, flags=re.DOTALL)
-                result = re.sub(r'Action:.*?$', '', result, flags=re.DOTALL)
-                # Remove any markdown formatting
-                result = re.sub(r'^```.*?\n', '', result, flags=re.DOTALL)
-                result = re.sub(r'\n```$', '', result, flags=re.DOTALL)
-                result = re.sub(r'^`|`$', '', result)
+                # If no "Final Answer:" found, try to extract any HTML content
+                html_start = result.find('<')
+                if html_start >= 0:
+                    result = result[html_start:]
+                    html_end = result.rfind('>')
+                    if html_end > 0:
+                        result = result[:html_end + 1]
+                else:
+                    # Fallback: create a simple HTML response
+                    result = f'<div class="response-container"><p class="answer-text">I found some data: {result.strip()}</p></div>'
             
             print(result)
             return result
