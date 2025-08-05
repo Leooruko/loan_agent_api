@@ -15,19 +15,19 @@ FLASK_CONFIG = {
 # AI Model Configuration
 AI_CONFIG = {
     'MODEL_NAME': 'mistral',
-    'MAX_QUERY_LENGTH': 500,  # Reduced for better performance
-    'MAX_SQL_LENGTH': 300,    # Reduced for security and performance
-    'TIMEOUT_SECONDS': 90,    # Increased timeout for complex queries (90 seconds)
-    'MAX_ITERATIONS': 6,      # Reduced to prevent excessive processing time
+    'MAX_QUERY_LENGTH': 10000,  # Reduced for better performance
+    'MAX_SQL_LENGTH': 3000,    # Reduced for security and performance
+    'TIMEOUT_SECONDS': 120,    # Increased timeout for complex queries (90 seconds)
+    'MAX_ITERATIONS': 56,      # Reduced to prevent excessive processing time
     'TEMPERATURE': 0.1,       # Lower temperature for more consistent responses
-    'REQUEST_TIMEOUT': 100    # Total request timeout including processing
+    'REQUEST_TIMEOUT': 1000    # Total request timeout including processing
 }
 
 # Data Configuration
 DATA_CONFIG = {
     'CSV_FILE_PATH': 'processed_data.csv',
     'ENCODING': 'utf-8',
-    'MAX_ROWS_DISPLAY': 10    # Limit displayed rows for performance
+    'MAX_ROWS_DISPLAY': 10000    # Limit displayed rows for performance
 }
 
 # UI Configuration
@@ -122,6 +122,6 @@ PERFORMANCE_CONFIG = {
 SECURITY_CONFIG = {
     'ALLOWED_SQL_KEYWORDS': ['SELECT', 'FROM', 'WHERE', 'ORDER BY', 'GROUP BY', 'LIMIT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN'],
     'BLOCKED_SQL_KEYWORDS': ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 'EXEC', 'EXECUTE'],
-    'MAX_QUERY_COMPLEXITY': 5,  # Number of clauses allowed
+    'MAX_QUERY_COMPLEXITY': 50,  # Number of clauses allowed
     'RATE_LIMIT_PER_MINUTE': 30
 } 
