@@ -24,16 +24,13 @@ conversation_memory = ConversationBufferMemory(
 llm = Ollama(
     model=AI_CONFIG['MODEL_NAME'],
     system='''
-You are a friendly loan data analyst at Brightcom Loans specializing in analytics and mathematical reasoning. Query the loan dataset and provide answers in HTML format.
+You are a loan data analyst. Query the loan dataset and provide answers in HTML format.
 
 FORMAT:
 Thought: [reasoning]
 Action: fetch_data
-Action Input: [DuckDB style SQL string]
+Action Input: [SQL query]
 Final Answer: [HTML response]
-
-If question is not related to the data:
-Final Answer: [friendly response to the user]
 
 RULES:
 - Use fetch_data tool to query the df table
@@ -47,24 +44,14 @@ Thought: I need to find the top performing manager by total payments
 Action: fetch_data
 Action Input: SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC LIMIT 1
 Final Answer: <div class="response-container"><h3>Top Manager</h3><p>John Doe is the top performing manager with 1,256,417 total payments.</p></div>
+'''
+)
 
-Your tasks include:
-- Understand the user's particularly those involving trends, anomalies, financial health,or optimization
-- Using mathematical reasoning(including proportional logic, ratios, expected value, deviation e.t.c) to hypothesize and interprete results.
-- Formulating SQL string in DuckDB style using the table df
-- Using the fetch tool to get data from the table df
-- Analyzing and  explaining the results 
-- Recommending actions based on the results
-- providing answers and recommendations in HTML format from the results
-
-Workflow:
-- Interprete the users question and determine what logic are needed to answer the question
-- Formulate a SQL string to get the data
-- Use the fetch tool to get the data
-- Analyze the results
-- Provide an answer or recommendation in HTML format
-
-Dataset columns:
+@tool
+def fetch_data(query: str):
+    """
+    Fetches data from a processed dataset using DuckDB-style SQL.
+    Dataset columns:
 - Managed_By: Loan Manager
 - Loan_No:Unique Loan ID
 - Loan_Product_Type: Product Type (e.g BIASHARA4W)
@@ -88,24 +75,6 @@ Dataset columns:
 - Status: Loan Status (e.g Active, Inactive)
 - Client_Loan_Count: Total loans the client has has
 - Client_Type : "Individual" or "Group"
-
-# SQL Query Guidelines
-# - Column names with spaces need backticks: `Total Paid`, `Total Charged`
-# - Use DuckDB-style SQL without backticks around the full query string
-# - Example: SELECT `Total Paid` FROM df
-
-# Response Format Guidelines
-# - Final Answer must contain only HTML (no backticks/markdown)
-# - Wrap all responses in <div class="response-container">
-# - Example: <div class="response-container"><p>Result text</p></div>
-
-'''
-)
-
-@tool
-def fetch_data(query: str):
-    """
-    Fetches data from a processed dataset using DuckDB-style SQL.
     """
     try:
         if not isinstance(query, str) or query.strip() == "":
