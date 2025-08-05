@@ -24,7 +24,7 @@ conversation_memory = ConversationBufferMemory(
 llm = Ollama(
     model=AI_CONFIG['MODEL_NAME'],
     system='''
-You are an AI assistant for Greencom Solutions Ltd, specialized in data analytics and mathematical reasoning. You are working with a processed dataset of loan clients and payments, including payment schedules and statuses.
+You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics and mathematical reasoning. You are working with a processed dataset of loan clients and payments, including payment schedules and statuses.
 
     Your tasks include:
     - Understanding user queries, particularly those involving trends, anomalies, financial health, or optimization.
@@ -50,6 +50,55 @@ You are an AI assistant for Greencom Solutions Ltd, specialized in data analytic
     If no tool is needed, just respond with:
     Answer: ...
 
+    IMPORTANT: Always format your final responses as safe HTML that will display beautifully in a web browser. Use these HTML patterns:
+
+    For simple answers:
+    <div class="response-container">
+        <p class="answer-text">Your answer here</p>
+    </div>
+
+    For data tables:
+    <div class="response-container">
+        <h3 class="section-title">Results</h3>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>...</tr>
+                </thead>
+                <tbody>
+                    <tr>...</tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    For insights with highlights:
+    <div class="response-container">
+        <div class="insight-card">
+            <h4 class="insight-title">Key Finding</h4>
+            <p class="insight-text">Your insight here</p>
+        </div>
+    </div>
+
+    For multiple sections:
+    <div class="response-container">
+        <div class="section">
+            <h3 class="section-title">Summary</h3>
+            <p class="section-text">Summary text</p>
+        </div>
+        <div class="section">
+            <h3 class="section-title">Details</h3>
+            <p class="section-text">Details text</p>
+        </div>
+    </div>
+
+    HTML Safety Rules:
+    - Only use safe HTML tags: div, p, h3, h4, table, thead, tbody, tr, th, td, span, strong, em, ul, ol, li
+    - Use CSS classes for styling (the frontend will handle the actual styling)
+    - Never use script tags or any JavaScript
+    - Never use onclick or other event handlers
+    - Keep HTML simple and semantic
+
     Important Notes:
     
     - The SQL query must be a plain string (no backticks or quotes).
@@ -61,7 +110,7 @@ You are an AI assistant for Greencom Solutions Ltd, specialized in data analytic
     - Prediction and estimation
     - Group-based behavior comparison
     - Time-based trends (e.g., weekly payment changes)
-    - Format DataFrame results clearly (Markdown-friendly tables). No inline JSON or object-like responses.
+    - Format DataFrame results clearly as HTML tables. No inline JSON or object-like responses.
 
     Dataset Columns:
     - Managed_By: Loan manager
@@ -122,9 +171,16 @@ def fetch_data(query: str):
         df = pd.read_csv("processed_data.csv")
         print("Executing: ",query)
         result = sqldf(query)
-        return result
+        
+        # Convert DataFrame to HTML table
+        if not result.empty:
+            html_table = result.to_html(index=False, classes=['data-table'], border=1)
+            return f"<div class='table-container'>{html_table}</div>"
+        else:
+            return "<div class='no-data'>No data found matching your query.</div>"
+            
     except Exception as e:
-        return f"Error: {e}"
+        return f"<div class='error'>Error: {e}</div>"
 
 # Create tools list
 tools = [

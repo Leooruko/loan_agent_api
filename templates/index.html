@@ -369,6 +369,121 @@
         justify-content: center;
       }
     }
+
+    /* HTML Response Styling */
+    .response-container {
+      margin: 10px 0;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      border-left: 4px solid #f16726;
+    }
+
+    .answer-text {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #333;
+      margin: 0;
+    }
+
+    .section-title {
+      color: #f16726;
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      margin: 15px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      font-size: 0.9rem;
+    }
+
+    .data-table th {
+      background: #f16726;
+      color: white;
+      padding: 12px 8px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .data-table td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .data-table tr:nth-child(even) {
+      background: #f8f9fa;
+    }
+
+    .data-table tr:hover {
+      background: #e3f2fd;
+    }
+
+    .insight-card {
+      background: linear-gradient(135deg, #f16726 0%, #e67e22 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+
+    .insight-title {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .insight-text {
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .section {
+      margin: 15px 0;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e9ecef;
+    }
+
+    .section-text {
+      margin: 0;
+      line-height: 1.6;
+      color: #333;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 20px;
+      color: #6c757d;
+      font-style: italic;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      padding: 10px;
+      border-radius: 5px;
+      border-left: 4px solid #dc3545;
+    }
+
+    /* Make sure HTML content in bot messages is properly styled */
+    .message.bot .message-content {
+      overflow-x: auto;
+    }
+
+    .message.bot .message-content table {
+      margin: 10px 0;
+    }
   </style>
 </head>
 
@@ -464,6 +579,9 @@
           </div>
         `;
         messageDiv.classList.add('loading');
+      } else if (type === 'bot' && content.includes('<')) {
+        // Render HTML content for bot messages
+        messageContent.innerHTML = content;
       } else {
         messageContent.textContent = content;
       }
