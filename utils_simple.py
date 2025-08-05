@@ -97,6 +97,8 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     </div>
 
     CRITICAL: Always end your response with "Final Answer:" followed by your HTML-formatted response. Never include HTML in Thought or Action sections.
+    CRITICAL: NEVER wrap the Final Answer in backticks, code blocks, or markdown formatting.
+    CRITICAL: The Final Answer should be plain HTML without any markdown syntax.
 
     HTML Safety Rules:
     - Only use safe HTML tags: div, p, h3, h4, table, thead, tbody, tr, th, td, span, strong, em, ul, ol, li
@@ -147,6 +149,18 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     IMPORTANT: Never surround the Final Answer with backticks or markdown code blocks.
     IMPORTANT: Never include HTML in the Thought or Action sections. Only use HTML in the Final Answer.
     IMPORTANT: Never include markdown code blocks in the Final Answer.
+
+    CORRECT EXAMPLE:
+    Thought: I need to find the top performing loan manager.
+    Action: fetch_data
+    Action Input: SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC LIMIT 1
+
+    Final Answer: <div class="response-container">
+        <div class="insight-card">
+            <h4 class="insight-title">Top Performing Manager</h4>
+            <p class="insight-text">John Doe is the top performing manager with total payments of 1,256,417.</p>
+        </div>
+    </div>
 
     EXAMPLE QUERIES:
     - "How many active loans?" → SELECT COUNT(*) FROM df WHERE Status = 'Active'
@@ -208,7 +222,7 @@ agent = initialize_agent(
     agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,  # Use conversational agent for memory
     verbose=True,
     handle_parsing_errors=True,
-    max_iterations=AI_CONFIG['MAX_ITERATIONS'],
+    # max_iterations=AI_CONFIG['MAX_ITERATIONS'],
     memory=conversation_memory
 )
 
@@ -233,12 +247,20 @@ async def promt_llm(query, conversation_history=None):
             final_answer_match = re.search(r'Final Answer:\s*(.*)', result, re.DOTALL)
             if final_answer_match:
                 result = final_answer_match.group(1).strip()
+                # Remove any markdown formatting (backticks, code blocks)
+                result = re.sub(r'^```.*?\n', '', result, flags=re.DOTALL)
+                result = re.sub(r'\n```$', '', result, flags=re.DOTALL)
+                result = re.sub(r'^`|`$', '', result)
             else:
                 # If no "Final Answer:" found, clean up the result
                 result = result.strip()
                 # Remove any remaining Thought/Action patterns
                 result = re.sub(r'Thought:.*?$', '', result, flags=re.DOTALL)
                 result = re.sub(r'Action:.*?$', '', result, flags=re.DOTALL)
+                # Remove any markdown formatting
+                result = re.sub(r'^```.*?\n', '', result, flags=re.DOTALL)
+                result = re.sub(r'\n```$', '', result, flags=re.DOTALL)
+                result = re.sub(r'^`|`$', '', result)
             
             print(result)
             return result
