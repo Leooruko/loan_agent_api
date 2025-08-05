@@ -136,37 +136,34 @@ tools = [
 ]
 
 # Create agent executor with memory
-try:
-    # Use agent initialization with memory
-    agent_executor = initialize_agent(
-        tools=tools,
-        llm=llm,
-        agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,  # Use conversational agent for memory
-        verbose=False,
-        handle_parsing_errors=True,
-        max_iterations=AI_CONFIG['MAX_ITERATIONS'],
-        memory=conversation_memory
-    )
-except Exception as e:
-    logger.error(f"Agent initialization failed: {e}")
-    # Create a basic agent as fallback
-    agent_executor = None
+
+agent = initialize_agent(
+    tools=tools,
+    llm=llm,
+    agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,  # Use conversational agent for memory
+    verbose=True,
+    handle_parsing_errors=True,
+    max_iterations=AI_CONFIG['MAX_ITERATIONS'],
+    memory=conversation_memory
+)
+
 
 async def promt_llm(query, conversation_history=None):
     """
     Process user query and return AI response.
     """
     try:
-        if agent_executor is None:
+        if agent is None:
             return "I'm having trouble initializing the AI system. Please restart the application."
         
-        response = agent_executor.invoke({"input": query})
+        response = agent.invoke({"input": query})
         result = response.get("output", "No response generated")
         
         if isinstance(result, str):
             # Remove any tool call artifacts
             result = re.sub(r'Action:.*?Action Input:.*?Observation:.*?', '', result, flags=re.DOTALL)
             result = result.strip()
+            print(result)
             return result
         else:
             return "I'm here to help with loan and financial data questions. What would you like to know about your loan portfolio?"
