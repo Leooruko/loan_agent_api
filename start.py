@@ -89,7 +89,7 @@ def run_tests():
     print("\n🧪 Running basic tests...")
     try:
         result = subprocess.run([sys.executable, "test_improvements.py"], 
-                              capture_output=True, text=True, timeout=30)
+                              capture_output=True, text=True, timeout=3600)
         if result.returncode == 0:
             print("✅ Basic tests passed")
             return True

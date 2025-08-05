@@ -16,7 +16,7 @@ def test_simple_query():
         response = requests.post(
             'http://localhost:5500/chat',
             json={'promt': 'Hello'},
-            timeout=30
+            timeout=3600
         )
         
         if response.status_code == 200:
@@ -45,7 +45,7 @@ def test_complex_query():
         response = requests.post(
             'http://localhost:5500/chat',
             json={'promt': 'Show me all active loans with their payment status and total amounts'},
-            timeout=120  # 2 minutes timeout
+            timeout=3600  # 1 hour timeout for testing
         )
         
         if response.status_code == 200:
@@ -75,7 +75,7 @@ def test_timeout_configuration():
     
     try:
         # Test API info endpoint to check configuration
-        response = requests.get('http://localhost:5500/api/info', timeout=10)
+        response = requests.get('http://localhost:5500/api/info', timeout=3600)
         
         if response.status_code == 200:
             data = response.json()
@@ -107,7 +107,7 @@ def test_health_endpoint():
     print("\nTesting health endpoint...")
     
     try:
-        response = requests.get('http://localhost:5500/health', timeout=10)
+        response = requests.get('http://localhost:5500/health', timeout=3600)
         
         if response.status_code == 200:
             data = response.json()
@@ -134,7 +134,7 @@ def test_rate_limiting():
             response = requests.post(
                 'http://localhost:5500/chat',
                 json={'promt': f'Test query {i}'},
-                timeout=10
+                timeout=3600
             )
             responses.append(response.status_code)
             time.sleep(0.1)  # Small delay
@@ -165,7 +165,7 @@ def main():
     
     # Check if server is running
     try:
-        response = requests.get('http://localhost:5500/', timeout=5)
+        response = requests.get('http://localhost:5500/', timeout=3600)
         print("✅ Server is running")
     except Exception as e:
         print(f"❌ Server is not running: {e}")

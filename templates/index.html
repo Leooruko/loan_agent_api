@@ -555,11 +555,17 @@
       sendButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3600000); // 1 hour timeout
+        
         const response = await fetch('/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ promt: message, history: messageHistory })
+          body: JSON.stringify({ promt: message, history: messageHistory }),
+          signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

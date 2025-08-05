@@ -82,7 +82,7 @@ def start_gunicorn():
         'gunicorn',
         '--config', 'gunicorn_config.py',
         '--bind', '0.0.0.0:5500',
-        '--timeout', '120',  # 2 minutes timeout
+        '--timeout', '3600',  # 1 hour timeout for testing
         '--workers', '3',    # Start with 3 workers
         '--worker-class', 'sync',
         '--preload',         # Preload the application

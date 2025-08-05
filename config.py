@@ -17,10 +17,10 @@ AI_CONFIG = {
     'MODEL_NAME': 'mistral',
     'MAX_QUERY_LENGTH': 10000,  # Reduced for better performance
     'MAX_SQL_LENGTH': 3000,    # Reduced for security and performance
-    'TIMEOUT_SECONDS': 120,    # Increased timeout for complex queries (90 seconds)
-    'MAX_ITERATIONS': 56,      # Reduced to prevent excessive processing time
+    'TIMEOUT_SECONDS': 3600,   # 1 hour timeout for testing
+    'MAX_ITERATIONS': 100,     # Increased for testing
     'TEMPERATURE': 0.1,       # Lower temperature for more consistent responses
-    'REQUEST_TIMEOUT': 1000    # Total request timeout including processing
+    'REQUEST_TIMEOUT': 3600    # 1 hour total request timeout for testing
 }
 
 # Data Configuration
@@ -111,9 +111,9 @@ LOGGING_CONFIG = {
 # Performance Configuration
 PERFORMANCE_CONFIG = {
     'CACHE_ENABLED': True,
-    'CACHE_TIMEOUT': 300,  # 5 minutes
+    'CACHE_TIMEOUT': 3600,  # 1 hour for testing
     'MAX_CONCURRENT_REQUESTS': 5,
-    'REQUEST_TIMEOUT': 30,
+    'REQUEST_TIMEOUT': 3600,  # 1 hour for testing
     'RETRY_ATTEMPTS': 3,
     'RETRY_DELAY': 1
 }

@@ -19,9 +19,9 @@ max_requests = 1000
 max_requests_jitter = 50
 
 # Timeout settings - Critical for AI workloads
-timeout = 120  # 2 minutes - increased for LLM processing
+timeout = 3600  # 1 hour - increased for testing
 keepalive = 2
-graceful_timeout = 30
+graceful_timeout = 3600  # 1 hour for testing
 worker_tmp_dir = "/dev/shm"  # Use RAM for temporary files
 
 # Process naming
