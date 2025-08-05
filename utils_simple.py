@@ -62,8 +62,10 @@ Final Answer: <div class="response-container">...</div>
 - Wrap answers in: `<div class="response-container">...</div>`
 - Use: `<h3>`, `<p>`, `<table>`, `<thead>`, `<tbody>`, `<tr>`, `<th>`, `<td>`, `<ul>`, `<li>`
 - Never use `<script>`, `onclick`, or JavaScript.
-- Never use markdown (no backticks or triple backticks).
-- Final Answer must be HTML only.
+- NEVER use backticks, code blocks, or markdown around Final Answer
+- Final Answer must be plain HTML only, no formatting
+- DO NOT add extra text before or after the HTML
+- DO NOT explain what you're doing in the Final Answer
 
 💬 Example:
 
@@ -72,13 +74,9 @@ Thought: I need to find the top 3 managers by total paid amount.
 Action: fetch_data  
 Action Input: SELECT Managed_By, SUM(`Total Paid`) as total FROM df GROUP BY Managed_By ORDER BY total DESC LIMIT 3
 
-Final Answer:  
-<div class="response-container">
+Final Answer: <div class="response-container">
   <h3 class="section-title">Top Performing Managers</h3>
-  <table class="data-table">
-    <thead><tr><th>Manager</th><th>Total Paid</th></tr></thead>
-    <tbody><tr><td>Jane Doe</td><td>1,250,000</td></tr></tbody>
-  </table>
+  <p>Jane Doe is the top performing manager with 1,250,000 total payments.</p>
 </div>
 
 '''
@@ -164,8 +162,14 @@ async def promt_llm(query, conversation_history=None):
                 result = re.sub(r'^```.*?\n', '', result, flags=re.DOTALL)
                 result = re.sub(r'\n```$', '', result, flags=re.DOTALL)
                 result = re.sub(r'^`|`$', '', result)
-                # Remove any remaining backticks
+                # Remove any remaining backticks and code blocks
                 result = re.sub(r'^`|`$', '', result)
+                result = re.sub(r'```.*?```', '', result, flags=re.DOTALL)
+                result = re.sub(r'^`|`$', '', result)
+                # Remove any text before the first HTML tag
+                html_start = result.find('<')
+                if html_start > 0:
+                    result = result[html_start:]
             else:
                 # If no "Final Answer:" found, clean up the result
                 result = result.strip()
