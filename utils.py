@@ -125,7 +125,8 @@ llm = Ollama(
 agent = initialize_agent(
     tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose = True,
-    max_iterations=3
+    max_iterations=3,
+    handle_parsing_errors=True
     )
 
 agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, handle_parsing_errors=True)
