@@ -7,10 +7,7 @@ import pandas as pd
 from langchain.tools import tool
 from pandasql import sqldf
 import re
-tools = [
-    Tool(name="fetch_data", func=fetch_data, description="Queries processed dataset for loan information. Do not return the full JSON; "
-        "only extract what’s necessary to answer the user’s question clearly."),    
-]
+
 
 @tool
 def fetch_data(query: str):
@@ -39,6 +36,12 @@ def fetch_data(query: str):
         return result
     except Exception as e:
         return f"Error: {e}"
+
+
+tools = [
+    Tool(name="fetch_data", func=fetch_data, description="Queries processed dataset for loan information. Do not return the full JSON; "
+        "only extract what’s necessary to answer the user’s question clearly."),    
+]
 
 llm = Ollama(
     model="mistral",
