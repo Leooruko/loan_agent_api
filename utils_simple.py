@@ -51,30 +51,6 @@ Final Answer: <div class="response-container"><h3>Top Manager</h3><p>John Doe is
 def fetch_data(query: str):
     """
     Fetches data from a processed dataset using DuckDB-style SQL.
-    Dataset columns:
-- Managed_By: Loan Manager
-- Loan_No:Unique Loan ID
-- Loan_Product_Type: Product Type (e.g BIASHARA4W)
-- Client_Code :Unique Client ID
-- Client_Name: Client Name
-- Issued_Date: Date the loan was issued
-- Amount_Disbursed: Disbursed loan amount
-- Installments: Number of installments
-- Total Paid: Total amount paid by client
-- Total Charged: Total amount charged to client
-- Days_Since_Issued: Days since loan was issued
-- Is_installment_Day: Whether today is an installment day
-- Weeks_Passed: Weeks since issued
-- installments_Expected: Expected installments to be paid by client
-- Installment_Amount: Expected amount per  installment
-- Expected_Paid_Today: Expected cumulative payment today
-- Expected_Before-Today: Expected cumulative payment before today 
-- Arrears: Unpaid Amount which is overdue
-- Due_Today: Amount due today
-- Mobile_Phone_No: clients phone No.
-- Status: Loan Status (e.g Active, Inactive)
-- Client_Loan_Count: Total loans the client has has
-- Client_Type : "Individual" or "Group"
     """
     try:
         if not isinstance(query, str) or query.strip() == "":
@@ -115,14 +91,13 @@ tools = [
 ]
 
 # Create agent executor with memory
-
 agent = initialize_agent(
     tools=tools,
     llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Use zero-shot agent for simpler format
+    agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,  # More flexible format
     verbose=True,
     handle_parsing_errors=True,
-    max_iterations=8,  # Give agent more chances to get it right
+    max_iterations=10,  # More iterations for complex queries
     memory=conversation_memory
 )
 
@@ -166,8 +141,13 @@ async def promt_llm(query, conversation_history=None):
                     if html_end > 0:
                         result = result[:html_end + 1]
                 else:
-                    # Fallback: create a simple HTML response
-                    result = f'<div class="response-container"><p class="answer-text">I found some data: {result.strip()}</p></div>'
+                    # Try to find any HTML-like content in the response
+                    html_pattern = re.search(r'<div[^>]*>.*?</div>', result, re.DOTALL)
+                    if html_pattern:
+                        result = html_pattern.group(0)
+                    else:
+                        # Fallback: create a simple HTML response
+                        result = f'<div class="response-container"><p class="answer-text">I found some data: {result.strip()}</p></div>'
             
             print(result)
             return result
