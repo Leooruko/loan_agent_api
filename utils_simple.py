@@ -44,15 +44,17 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     Response format:
     IMPORTANT: Follow this exact format for your responses:
     
-    When using tools:
+    Step 1: Use the tool to get data
     Thought: [Your reasoning about what data you need]
     Action: fetch_data
     Action Input: SELECT ... FROM df WHERE ...
-    Thought: I need to come up with an answer in HTML format that will be displayed in a web browser.
-    When providing the FINAL answer (after all tools are used):
+    
+    Step 2: After getting the data, provide the final answer
+    Thought: Now I have the data, I need to provide the final answer in HTML format.
     Final Answer: [Your complete HTML-formatted response]
     
-    NEVER include HTML in the Thought or Action sections. Only use HTML in the Final Answer.
+    NEVER include HTML in the Observation, Thought or Action sections. Only use HTML in the Final Answer.
+    NEVER wrap the Final Answer in backticks or markdown.
     
     For the Final Answer, always format your responses as safe HTML that will display beautifully in a web browser. Use these HTML patterns:
 
@@ -151,10 +153,10 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     IMPORTANT: Never include markdown code blocks in the Final Answer.
 
     CORRECT EXAMPLE:
-    Thought: I need to find the top performing loan manager.
+    Thought: I need to find the top performing loan manager by total payments.
     Action: fetch_data
     Action Input: SELECT Managed_By, SUM(`Total Paid`) FROM df GROUP BY Managed_By ORDER BY SUM(`Total Paid`) DESC LIMIT 1
-    Thought: I need to come up with an answer in HTML format that will be displayed in a web browser.
+    Thought: Now I have the data, I need to provide the final answer in HTML format.
     Final Answer: <div class="response-container">
         <div class="insight-card">
             <h4 class="insight-title">Top Performing Manager</h4>
@@ -195,15 +197,14 @@ def fetch_data(query: str):
         print("Executing: ",query)
         result = sqldf(query)
         
-        # Convert DataFrame to HTML table
+        # Return plain text result for the agent to process
         if not result.empty:
-            html_table = result.to_html(index=False, classes=['data-table'], border=1)
-            return f"<div class='table-container'>{html_table}</div>"
+            return result.to_string(index=False)
         else:
-            return "<div class='no-data'>No data found matching your query.</div>"
+            return "No data found matching your query."
             
     except Exception as e:
-        return f"<div class='error'>Error: {e}</div>"
+        return f"Error: {e}"
 
 # Create tools list
 tools = [
@@ -250,6 +251,8 @@ async def promt_llm(query, conversation_history=None):
                 # Remove any markdown formatting (backticks, code blocks)
                 result = re.sub(r'^```.*?\n', '', result, flags=re.DOTALL)
                 result = re.sub(r'\n```$', '', result, flags=re.DOTALL)
+                result = re.sub(r'^`|`$', '', result)
+                # Remove any remaining backticks
                 result = re.sub(r'^`|`$', '', result)
             else:
                 # If no "Final Answer:" found, clean up the result
