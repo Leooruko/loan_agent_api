@@ -94,8 +94,8 @@ llm = Ollama(
     - Issued_Date: Date loan was issued
     - Amount_Disbursed: Disbursed loan amount
     - Installments: Number of installments
-    - `Total Paid`: Total paid by client
-    - `Total Charged`: Total owed (principal + interest)
+    - Total Paid: Total paid by client
+    - Total Charged: Total owed (principal + interest)
     - Days_Since_Issued: Days since loan was issued
     - Is_Installment_Day: Whether today is an installment day
     - Weeks_Passed: Weeks since issue
