@@ -42,15 +42,19 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
     5. Provide a clear answer and, if relevant, offer hypotheses, explanations, or recommendations.
 
     Response format:
-    If a tool is needed, follow this format:
-    Thought: ...
+    IMPORTANT: Follow this exact format for your responses:
+    
+    When using tools:
+    Thought: [Your reasoning about what data you need]
     Action: fetch_data
     Action Input: SELECT ... FROM df WHERE ...
-
-    If no tool is needed, just respond with:
-    Answer: ...
-
-    IMPORTANT: Always format your final responses as safe HTML that will display beautifully in a web browser. Use these HTML patterns:
+    
+    When providing the FINAL answer (after all tools are used):
+    Final Answer: [Your complete HTML-formatted response]
+    
+    NEVER include HTML in the Thought or Action sections. Only use HTML in the Final Answer.
+    
+    For the Final Answer, always format your responses as safe HTML that will display beautifully in a web browser. Use these HTML patterns:
 
     For simple answers:
     <div class="response-container">
@@ -91,6 +95,8 @@ You are an AI assistant for Brightcom Loans Ltd, specialized in data analytics a
             <p class="section-text">Details text</p>
         </div>
     </div>
+
+    CRITICAL: Always end your response with "Final Answer:" followed by your HTML-formatted response. Never include HTML in Thought or Action sections.
 
     HTML Safety Rules:
     - Only use safe HTML tags: div, p, h3, h4, table, thead, tbody, tr, th, td, span, strong, em, ul, ol, li
@@ -216,9 +222,21 @@ async def promt_llm(query, conversation_history=None):
         result = response.get("output", "No response generated")
         
         if isinstance(result, str):
-            # Remove any tool call artifacts
+            # Remove any tool call artifacts and extract only the final answer
             result = re.sub(r'Action:.*?Action Input:.*?Observation:.*?', '', result, flags=re.DOTALL)
-            result = result.strip()
+            result = re.sub(r'Thought:.*?Action:.*?Action Input:.*?Observation:.*?', '', result, flags=re.DOTALL)
+            
+            # Look for "Final Answer:" and extract everything after it
+            final_answer_match = re.search(r'Final Answer:\s*(.*)', result, re.DOTALL)
+            if final_answer_match:
+                result = final_answer_match.group(1).strip()
+            else:
+                # If no "Final Answer:" found, clean up the result
+                result = result.strip()
+                # Remove any remaining Thought/Action patterns
+                result = re.sub(r'Thought:.*?$', '', result, flags=re.DOTALL)
+                result = re.sub(r'Action:.*?$', '', result, flags=re.DOTALL)
+            
             print(result)
             return result
         else:
