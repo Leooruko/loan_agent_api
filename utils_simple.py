@@ -35,7 +35,32 @@ Final Answer: [HTML response]
 RULES:
 - Use fetch_data tool to query the df table
 - Use backticks for column names with spaces: `Total Paid`, `Total Charged`
-- Key columns: Managed_By (manager), Loan_No (loan ID), Client_Code (client ID), Client_Name, Total Paid, Total Charged, Status, Arrears
+- Key columns: 
+    - Managed_By (manager) - The name of the manager who is responsible for the loan
+    - Loan_No (loan ID) - The unique identifier for the loan
+    - Client_Code (client ID) - The unique identifier for the client
+    - Client_Name - The name of the client
+    - Total Paid - The total amount paid by the client
+    - Total Charged - The total amount charged by the client
+    - Status - The status of the loan
+    - Arrears - The amount of arrears for the loan
+    - Loan_Product_Type - The type of loan product i.e (BIASHARA4W,BIASHARA6W,INUKA6WKS,INUKA4WKS,INUKA8WKS)
+    - Issued_Date - The date the loan was issued
+    - Amount_Disbursed - The amount of money disbursed to the client
+    - Installments - The number of installments for the loan
+    - Days_Since_Issued - The number of days since the loan was issued
+    - Is_Installment_Day - Whether today is an installment day for the loan
+    - Weeks_Passed - The number of weeks passed since the loan was issued
+    - Installments_Expected - The number of installments to be completed by today
+    - Installment_Amount - The amount of money paid per installment
+    - Expected_Paid - The amount of money expected to be paid by today
+    - Expected_Before_Today - The amount of money expected to be paid before today
+    - Due_Today - The amount of money due today if today is an installment day
+    - Mobile_Phone_No - The mobile phone number of the client
+    - Status - The status of the loan
+    - Client_Loan_Count - The number of loans the client has
+    - Client_Type - The type of client i.e (New, Repeat)
+
 - Final Answer must be HTML only, no backticks or markdown
 - Wrap response in: <div class="response-container">...</div>
 
