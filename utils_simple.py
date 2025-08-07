@@ -34,6 +34,7 @@ Final Answer: [Professional HTML response with inline CSS]
 
 RULES:
 - Use fetch_data tool to query the df table
+- Use python_calculator tool for complex calculations, statistics, and data analysis
 - Use backticks for column names with spaces: `Total Paid`, `Total Charged`
 - Create professional, business-appropriate responses
 - Use inline CSS styling with brand colors: #F25D27 (primary), #82BF45 (success), #19593B (dark)
@@ -86,6 +87,18 @@ Thought: I need to find clients with arrears
 Action: fetch_data
 Action Input: SELECT COUNT(*) as Total_Clients, SUM(`Total Charged` - `Total Paid`) as Total_Arrears FROM df WHERE Arrears > 0
 Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #82BF45 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #82BF45;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Arrears Management Alert</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">We have <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{Total_Clients}</span> clients with outstanding arrears totaling <span style="background: rgba(255, 255, 255, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">KES {Total_Arrears:,.2f}</span>. Immediate follow-up required for collection management.</p></div></div>
+
+EXAMPLE 4:
+Thought: I need to calculate the average loan amount and standard deviation for statistical analysis
+Action: python_calculator
+Action Input: import pandas as pd; import numpy as np; df = pd.read_csv('processed_data.csv'); avg = df['Amount_Disbursed'].mean(); std = df['Amount_Disbursed'].std(); f"Average: {avg:.2f}, Std Dev: {std:.2f}"
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #19593B 0%, #82BF45 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(25, 89, 59, 0.3); border-left: 5px solid #82BF45;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Statistical Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Loan portfolio analysis shows <span style="background: rgba(255, 255, 255, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">average disbursement of KES {avg:,.2f}</span> with <span style="background: rgba(255, 255, 255, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">standard deviation of KES {std:,.2f}</span>. This indicates the distribution of loan sizes across our portfolio.</p></div></div>
+
+EXAMPLE 5:
+Thought: I need to calculate the percentage of loans that are performing well (paid more than 80% of expected amount)
+Action: python_calculator
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); performing = df[df['Total Paid'] >= df['Expected_Paid'] * 0.8]; percentage = (len(performing) / len(df)) * 100; f"{percentage:.1f}%"
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Portfolio Performance Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Portfolio health assessment shows <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{percentage:.1f}%</span> of loans are performing well (paid 80% or more of expected amount). This indicates strong portfolio quality and client repayment discipline.</p></div></div>
 '''
 )
 
@@ -123,12 +136,43 @@ def fetch_data(query: str):
     except Exception as e:
         return f"Error: {e}"
 
+@tool
+def python_calculator(code: str):
+    """
+    Executes Python code for calculations and data analysis. Use this for complex mathematical operations, statistical analysis, or custom calculations.
+    
+    Input should be valid Python code that returns a result. You can use pandas, numpy, and other standard libraries.
+    Examples:
+    - "sum([1, 2, 3, 4, 5])" for basic math
+    - "import numpy as np; np.mean([10, 20, 30, 40, 50])" for statistics
+    - "import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Total Paid'].sum()" for data analysis
+    """
+    try:
+        # Create a safe execution environment
+        import numpy as np
+        import pandas as pd
+        from datetime import datetime, timedelta
+        import math
+        import statistics
+        
+        # Execute the code
+        result = eval(code)
+        return str(result)
+        
+    except Exception as e:
+        return f"Error in Python calculation: {e}"
+
 # Create tools list
 tools = [
     Tool(
         name="fetch_data",
         func=fetch_data,
         description="Use this tool to query loan data. Input should be a SQL SELECT statement using the 'df' table. Note: Column names with spaces must be enclosed in backticks (e.g., `Total Paid`, `Total Charged`)."
+    ),
+    Tool(
+        name="python_calculator",
+        func=python_calculator,
+        description="Use this tool for complex calculations, statistical analysis, or mathematical operations. Input should be valid Python code that returns a result. You can use pandas, numpy, math, statistics, and datetime libraries."
     )
 ]
 
