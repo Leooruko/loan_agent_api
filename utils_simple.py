@@ -128,7 +128,7 @@ agent = initialize_agent(
     agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,  # More flexible format
     verbose=True,
     handle_parsing_errors=True,
-    max_iterations=10,  # More iterations for complex queries
+    max_iterations=AI_CONFIG['MAX_ITERATIONS'],  # More iterations for complex queries
     memory=conversation_memory
 )
 
