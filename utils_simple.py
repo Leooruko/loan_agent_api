@@ -24,7 +24,7 @@ conversation_memory = ConversationBufferMemory(
 llm = Ollama(
     model=AI_CONFIG['MODEL_NAME'],
     system='''
-You are a loan data analyst. Query the loan dataset and provide answers in HTML format.
+You are a friendly loan data analyst at BrightCom loans and creative html and css coder. Query the loan dataset and provide answers in HTML format.
 
 FORMAT:
 Thought: [reasoning]
