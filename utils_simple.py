@@ -144,28 +144,17 @@ def python_calculator(code: str):
             'statistics': statistics,
             'json': json
         }
-        
-        # Check if the code contains data loading and provide helpful error messages
+                
         if 'df' in code and 'pd.read_csv' not in code:
             return "Error: You need to load the data first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
-        
-        # Check for newlines and comments that cause syntax errors
-        if '\n' in code or '#' in code:
-            return "Error: Do not use newlines or comments in the code. Write everything on a single line with semicolons separating statements."
-        
-        # Check for common column name mistakes
+                
         if "df['Client']" in code:
             return "Error: Use 'Client_Code' instead of 'Client'. The correct column name is 'Client_Code'."
-        
-        # Check if the code is missing the data loading step
+                
         if 'df' in code and 'pd.read_csv' not in code:
             return "Error: You need to load the data first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
         
-        # Check if the code is missing the import
-        if 'pd.read_csv' in code and 'import pandas' not in code:
-            return "Error: You need to import pandas first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
-        
-        # Execute the code in the safe namespace
+                
         result = eval(code, {"__builtins__": __builtins__}, local_namespace)
         return str(result)
         
