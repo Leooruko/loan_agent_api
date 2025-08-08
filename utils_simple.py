@@ -61,10 +61,8 @@ PYTHON CODING GUIDELINES:
 - Format numbers: f"{value:,.2f}" for currency, f"{percentage:.1f}%" for percentages
 - Return results as formatted strings that can be used in HTML
 - IMPORTANT: Always include both import and data loading in the same code block
-- CRITICAL: Write all code on a single line with semicolons separating statements
-- CRITICAL: Do NOT use newlines, comments, or multi-line formatting in the code
+- CRITICAL: seperate different statements with semicolons
 - CRITICAL: Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
-- CRITICAL: Use simple single expressions: len(pd.read_csv('processed_data.csv')['Client_Code'].unique())
 
 EXAMPLE 1 - Top Performing Manager:
 Thought: I need to find the top performing manager by total payments
