@@ -14,6 +14,7 @@ The loan agent system has been significantly improved to enhance Python coding c
 - Updated all examples to use `python_calculator` action
 - Provided clear Python coding guidelines
 - Added comprehensive examples showing proper data analysis patterns
+- Added specific example for counting unique managers to prevent common errors
 
 ### 2. Enhanced Python Tool Safety
 
@@ -21,21 +22,23 @@ The loan agent system has been significantly improved to enhance Python coding c
 
 **Solution**:
 - Implemented safe execution environment with restricted namespace
-- Added proper error handling and logging
+- Added proper error handling and logging with specific error types (SyntaxError, NameError)
 - Included all necessary libraries (pandas, numpy, math, statistics, datetime)
 - Better error messages for debugging
+- Added validation to ensure data is loaded before analysis
 
 ### 3. Improved Data Analysis Examples
 
 **Problem**: Examples were generic and didn't reflect actual data structure.
 
 **Solution**:
-- Created 5 comprehensive examples covering different analysis types:
+- Created 6 comprehensive examples covering different analysis types:
   1. **Top Performing Manager**: Shows how to find best performing manager by total payments
   2. **Portfolio Statistics**: Comprehensive portfolio overview with multiple metrics
   3. **Arrears Analysis**: Detailed analysis of clients with outstanding payments
   4. **Loan Product Analysis**: Product popularity and performance analysis
   5. **Manager Performance Comparison**: Multi-metric manager comparison
+  6. **Count Unique Managers**: Simple example for counting unique values (prevents common errors)
 
 ### 4. Better Python Coding Guidelines
 

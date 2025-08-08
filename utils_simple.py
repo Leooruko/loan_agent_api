@@ -51,13 +51,14 @@ RULES:
 - Always use the python_calculator tool for data analysis - never try to access data directly
 
 PYTHON CODING GUIDELINES:
-- Always import required libraries: pandas as pd, numpy as np
-- Load data with: df = pd.read_csv('processed_data.csv')
+- Always import required libraries first: import pandas as pd
+- Always load data first: df = pd.read_csv('processed_data.csv')
 - For specific analysis, load individual files: loans_df = pd.read_csv('loans.csv')
 - Use proper pandas operations: df.groupby(), df.agg(), df.sort_values()
 - Handle missing data: df.dropna() or df.fillna()
 - Format numbers: f"{value:,.2f}" for currency, f"{percentage:.1f}%" for percentages
 - Return results as formatted strings that can be used in HTML
+- IMPORTANT: Always include both import and data loading in the same code block
 
 EXAMPLE 1 - Top Performing Manager:
 Thought: I need to find the top performing manager by total payments
@@ -88,6 +89,12 @@ Thought: I need to compare manager performance across multiple metrics
 Action: python_calculator
 Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); manager_stats = df.groupby('Managed_By').agg({'Loan_No': 'count', 'Amount_Disbursed': 'sum', 'Total_Paid': 'sum', 'Arrears': 'sum'}).rename(columns={'Loan_No': 'Loan_Count', 'Amount_Disbursed': 'Total_Disbursed', 'Total_Paid': 'Total_Paid', 'Arrears': 'Total_Arrears'}); manager_stats['Performance_Rate'] = (manager_stats['Total_Paid'] / manager_stats['Total_Disbursed'] * 100).round(1); manager_stats['Avg_Loan_Size'] = (manager_stats['Total_Disbursed'] / manager_stats['Loan_Count']).round(2); top_performer = manager_stats.sort_values('Performance_Rate', ascending=False).head(1); manager_name = top_performer.index[0]; performance_rate = top_performer['Performance_Rate'].iloc[0]; loan_count = top_performer['Loan_Count'].iloc[0]; avg_loan_size = top_performer['Avg_Loan_Size'].iloc[0]; f"Top Performer: {manager_name}, Performance Rate: {performance_rate}%, Loan Count: {loan_count}, Avg Loan Size: {avg_loan_size:,.2f}"
 Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #19593B 0%, #82BF45 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(25, 89, 59, 0.3); border-left: 5px solid #82BF45;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Manager Performance Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>{manager_name}</strong> leads our team with <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{performance_rate}%</span> performance rate, managing <span style="background: rgba(255, 255, 255, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">{loan_count}</span> loans with average loan size of <span style="background: rgba(255, 255, 255, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">KES {avg_loan_size:,.2f}</span>. Exceptional portfolio management and client relationship skills.</p></div></div>
+
+EXAMPLE 6 - Count Unique Managers:
+Thought: I need to count the number of unique managers in the system
+Action: python_calculator
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); unique_managers = len(df['Managed_By'].unique()); f"Total Unique Managers: {unique_managers}"
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Manager Count Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our organization has <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{unique_managers}</span> unique managers overseeing our loan portfolio. This represents our current management structure and distribution of responsibilities across the team.</p></div></div>
 '''
 )
 
@@ -122,10 +129,22 @@ def python_calculator(code: str):
             'json': json
         }
         
+        # Check if the code contains data loading and provide helpful error messages
+        if 'df' in code and 'pd.read_csv' not in code:
+            return "Error: You need to load the data first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
+        
         # Execute the code in the safe namespace
         result = eval(code, {"__builtins__": {}}, local_namespace)
         return str(result)
         
+    except SyntaxError as e:
+        error_msg = f"Syntax error in Python code: {str(e)}. Please check your code syntax."
+        logger.error(f"Python calculator syntax error: {error_msg}")
+        return error_msg
+    except NameError as e:
+        error_msg = f"Name error: {str(e)}. Make sure to import required libraries and load data first."
+        logger.error(f"Python calculator name error: {error_msg}")
+        return error_msg
     except Exception as e:
         error_msg = f"Error in Python calculation: {str(e)}"
         logger.error(f"Python calculator error: {error_msg}")
