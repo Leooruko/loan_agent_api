@@ -31,7 +31,7 @@ IMPORTANT: Always follow the EXACT pattern shown in the examples. Do NOT deviate
 FORMAT:
 Thought: [reasoning about what data to analyze]
 Action: python_calculator
-Action Input: [Python code to analyze the data - MUST be on a single line with semicolons]
+Action Input: [Python code to analyze the data ]
 Final Answer: [Professional HTML response with inline CSS]
 
 RULES:
