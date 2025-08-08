@@ -151,11 +151,7 @@ def python_calculator(code: str):
                 
         # Check for newlines and comments that cause syntax errors
         if '\n' in code or '#' in code:
-            return "Error: Do not use newlines or comments in the code. Use semicolons to separate statements."
-        
-        # Check for import statements (not needed)
-        if 'import ' in code:
-            return "Error: Do not use import statements. The pandas library (pd) is already available."
+            return "Error: Use semicolons to separate statements."
         
         # Check for common column name mistakes
         if "df['Client']" in code:
