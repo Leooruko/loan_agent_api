@@ -61,7 +61,7 @@ PYTHON CODING GUIDELINES:
 - Format numbers: f"{value:,.2f}" for currency, f"{percentage:.1f}%" for percentages
 - Return results as formatted strings that can be used in HTML
 - IMPORTANT: Always include both import and data loading in the same code block
-- CRITICAL: seperate different statements with semicolons
+- CRITICAL: seperate different statements with semicolons, do not use newlines or comments in the code
 - CRITICAL: Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
 
 EXAMPLE 1 - Top Performing Manager:
