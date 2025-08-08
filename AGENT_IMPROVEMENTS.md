@@ -49,8 +49,11 @@ Added clear guidelines for the model:
 - Handle missing data appropriately
 - Format numbers correctly for business context
 - Return results as formatted strings for HTML integration
-- Use simple single expressions: len(pd.read_csv('processed_data.csv')['Client_Code'].unique())
-- Do NOT use newlines, comments, or multi-line formatting
+- Use multiple lines separated by semicolons for complex operations
+- Examples: 
+  - Simple: `len(pd.read_csv('processed_data.csv'))`
+  - Complex: `df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name`
+- Do NOT use import statements, newlines, comments, or multi-line formatting
 - Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
 
 ### 5. Enhanced Error Handling
