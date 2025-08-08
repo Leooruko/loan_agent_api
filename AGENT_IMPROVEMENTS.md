@@ -32,13 +32,14 @@ The loan agent system has been significantly improved to enhance Python coding c
 **Problem**: Examples were generic and didn't reflect actual data structure.
 
 **Solution**:
-- Created 6 comprehensive examples covering different analysis types:
+- Created 7 comprehensive examples covering different analysis types:
   1. **Top Performing Manager**: Shows how to find best performing manager by total payments
   2. **Portfolio Statistics**: Comprehensive portfolio overview with multiple metrics
   3. **Arrears Analysis**: Detailed analysis of clients with outstanding payments
   4. **Loan Product Analysis**: Product popularity and performance analysis
   5. **Manager Performance Comparison**: Multi-metric manager comparison
   6. **Count Unique Managers**: Simple example for counting unique values (prevents common errors)
+  7. **Count Unique Clients**: Example for counting unique clients using correct column name
 
 ### 4. Better Python Coding Guidelines
 
@@ -48,6 +49,9 @@ Added clear guidelines for the model:
 - Handle missing data appropriately
 - Format numbers correctly for business context
 - Return results as formatted strings for HTML integration
+- Write all code on a single line with semicolons separating statements
+- Do NOT use newlines, comments, or multi-line formatting
+- Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
 
 ### 5. Enhanced Error Handling
 
@@ -56,6 +60,8 @@ Added clear guidelines for the model:
 - Graceful fallback for different response types
 - Improved logging for debugging
 - User-friendly error messages
+- Specific validation for newlines and comments that cause syntax errors
+- Column name validation to catch common mistakes (Client vs Client_Code)
 
 ## Example Improvements
 

@@ -59,6 +59,9 @@ PYTHON CODING GUIDELINES:
 - Format numbers: f"{value:,.2f}" for currency, f"{percentage:.1f}%" for percentages
 - Return results as formatted strings that can be used in HTML
 - IMPORTANT: Always include both import and data loading in the same code block
+- CRITICAL: Write all code on a single line with semicolons separating statements
+- CRITICAL: Do NOT use newlines, comments, or multi-line formatting in the code
+- CRITICAL: Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
 
 EXAMPLE 1 - Top Performing Manager:
 Thought: I need to find the top performing manager by total payments
@@ -95,6 +98,12 @@ Thought: I need to count the number of unique managers in the system
 Action: python_calculator
 Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); unique_managers = len(df['Managed_By'].unique()); f"Total Unique Managers: {unique_managers}"
 Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Manager Count Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our organization has <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{unique_managers}</span> unique managers overseeing our loan portfolio. This represents our current management structure and distribution of responsibilities across the team.</p></div></div>
+
+EXAMPLE 7 - Count Unique Clients:
+Thought: I need to count the number of unique clients in the system
+Action: python_calculator
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); unique_clients = len(df['Client_Code'].unique()); f"Total Unique Clients: {unique_clients}"
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Client Count Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our organization serves <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{unique_clients}</span> unique clients across our loan portfolio. This represents our current client base and market reach.</p></div></div>
 '''
 )
 
@@ -132,6 +141,14 @@ def python_calculator(code: str):
         # Check if the code contains data loading and provide helpful error messages
         if 'df' in code and 'pd.read_csv' not in code:
             return "Error: You need to load the data first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
+        
+        # Check for newlines and comments that cause syntax errors
+        if '\n' in code or '#' in code:
+            return "Error: Do not use newlines or comments in the code. Write everything on a single line with semicolons separating statements."
+        
+        # Check for common column name mistakes
+        if "df['Client']" in code:
+            return "Error: Use 'Client_Code' instead of 'Client'. The correct column name is 'Client_Code'."
         
         # Execute the code in the safe namespace
         result = eval(code, {"__builtins__": {}}, local_namespace)
