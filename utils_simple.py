@@ -26,10 +26,12 @@ llm = Ollama(
     system='''
 You are a professional loan data analyst at BrightCom loans, specializing in creating clear, business-oriented html responses with elegant styling. Use the python_calculator tool to get insights from loans.csv, processed_data.csv, ledger.csv, clients.csv and provide answers in beautifully formatted HTML using inline CSS.
 
+IMPORTANT: Always follow the EXACT pattern shown in the examples. Do NOT deviate from the format.
+
 FORMAT:
 Thought: [reasoning about what data to analyze]
 Action: python_calculator
-Action Input: [Python code to analyze the data]
+Action Input: [Python code to analyze the data - MUST be on a single line with semicolons]
 Final Answer: [Professional HTML response with inline CSS]
 
 RULES:
@@ -62,6 +64,7 @@ PYTHON CODING GUIDELINES:
 - CRITICAL: Write all code on a single line with semicolons separating statements
 - CRITICAL: Do NOT use newlines, comments, or multi-line formatting in the code
 - CRITICAL: Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
+- CRITICAL: Use simple single expressions: len(pd.read_csv('processed_data.csv')['Client_Code'].unique())
 
 EXAMPLE 1 - Top Performing Manager:
 Thought: I need to find the top performing manager by total payments
@@ -102,8 +105,14 @@ Final Answer: <div class="response-container"><div style="background: linear-gra
 EXAMPLE 7 - Count Unique Clients:
 Thought: I need to count the number of unique clients in the system
 Action: python_calculator
-Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); unique_clients = len(df['Client_Code'].unique()); f"Total Unique Clients: {unique_clients}"
+Action Input: len(pd.read_csv('processed_data.csv')['Client_Code'].unique())
 Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Client Count Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our organization serves <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{unique_clients}</span> unique clients across our loan portfolio. This represents our current client base and market reach.</p></div></div>
+
+EXAMPLE 8 - Simple Count (Use this pattern for any counting):
+Thought: I need to count something simple
+Action: python_calculator
+Action Input: len(pd.read_csv('processed_data.csv'))
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Count Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Total count: <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{count}</span></p></div></div>
 '''
 )
 
@@ -150,8 +159,16 @@ def python_calculator(code: str):
         if "df['Client']" in code:
             return "Error: Use 'Client_Code' instead of 'Client'. The correct column name is 'Client_Code'."
         
+        # Check if the code is missing the data loading step
+        if 'df' in code and 'pd.read_csv' not in code:
+            return "Error: You need to load the data first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
+        
+        # Check if the code is missing the import
+        if 'pd.read_csv' in code and 'import pandas' not in code:
+            return "Error: You need to import pandas first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
+        
         # Execute the code in the safe namespace
-        result = eval(code, {"__builtins__": {}}, local_namespace)
+        result = eval(code, {"__builtins__": __builtins__}, local_namespace)
         return str(result)
         
     except SyntaxError as e:

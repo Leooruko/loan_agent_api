@@ -49,7 +49,7 @@ Added clear guidelines for the model:
 - Handle missing data appropriately
 - Format numbers correctly for business context
 - Return results as formatted strings for HTML integration
-- Write all code on a single line with semicolons separating statements
+- Use simple single expressions: len(pd.read_csv('processed_data.csv')['Client_Code'].unique())
 - Do NOT use newlines, comments, or multi-line formatting
 - Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
 
