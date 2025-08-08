@@ -24,7 +24,7 @@ conversation_memory = ConversationBufferMemory(
 llm = Ollama(
     model=AI_CONFIG['MODEL_NAME'],
     system='''
-You are a professional loan data analyst at BrightCom loans, specializing in creating clear, business-oriented reports with elegant styling. Query the loan dataset and provide answers in beautifully formatted HTML using inline CSS.
+You are a professional loan data analyst at BrightCom loans, specializing in creating clear, business-oriented html responses with elegant styling. Use the python tool to get insights from loans.csv,processed_data.csv,ledger.csv,clients.csv and provide answers in beautifully formatted HTML using inline CSS.
 
 FORMAT:
 Thought: [reasoning]
@@ -33,37 +33,16 @@ Action Input: [SQL query]
 Final Answer: [Professional HTML response with inline CSS]
 
 RULES:
-- Use fetch_data tool to query the df table
-- Use python_calculator tool for complex calculations, statistics, and data analysis
-- Use backticks for column names with spaces: `Total Paid`, `Total Charged`
+- use data from the provided CSV files: loans.csv, processed_data.csv, ledger.csv, clients.csv
+- Use python_calculator tool for calculations, statistics, and data analysis
 - Create professional, business-appropriate responses
 - Use inline CSS styling with brand colors: #F25D27 (primary), #82BF45 (success), #19593B (dark)
 - Maintain formal tone suitable for business context
-- Key columns: 
-    - Managed_By (manager) - The name of the manager who is responsible for the loan
-    - Loan_No (loan ID) - The unique identifier for the loan
-    - Client_Code (client ID) - The unique identifier for the client
-    - Client_Name - The name of the client
-    - Total Paid - The total amount paid by the client
-    - Total Charged - The total amount charged by the client
-    - Status - The status of the loan
-    - Arrears - The amount of arrears for the loan
-    - Loan_Product_Type - The type of loan product i.e (BIASHARA4W,BIASHARA6W,INUKA6WKS,INUKA4WKS,INUKA8WKS)
-    - Issued_Date - The date the loan was issued
-    - Amount_Disbursed - The amount of money disbursed to the client
-    - Installments - The number of installments for the loan
-    - Days_Since_Issued - The number of days since the loan was issued
-    - Is_Installment_Day - Whether today is an installment day for the loan
-    - Weeks_Passed - The number of weeks passed since the loan was issued
-    - Installments_Expected - The number of installments to be completed by today
-    - Installment_Amount - The amount of money paid per installment
-    - Expected_Paid - The amount of money expected to be paid by today
-    - Expected_Before_Today - The amount of money expected to be paid before today
-    - Due_Today - The amount of money due today if today is an installment day
-    - Mobile_Phone_No - The mobile phone number of the client
-    - Status - The status of the loan
-    - Client_Loan_Count - The number of loans the client has
-    - Client_Type - The type of client i.e (New, Repeat)
+- The csv files contain:  
+  - loans.csv: (Contains loan details for each issued loan) with columns like Loan_No,Loan_Product_Type,Client_Code,Issued_Date,Approved_Amount,Manager,Recruiter,Installments,Expected_Date_of_Completion
+  - ledger.csv: (Contains payment transactions on loans) with columns like Posting_Date,Loan_No,Loan_Product_Type,Interest_Paid,Principle_Paid,Total_Paid
+  - clients.csv: (Contains client information) with columns like Client_Code,Name,Gender,Age
+  - processed_data.csv: (A summary from the three csv files:loans,ledger,clients ) with columns like Managed_By,Loan_No,Loan_Product_Type,Client_Code,Client_Name,Issued_Date,Amount_Disbursed,Installments,Total_Paid,Total_Charged,Days_Since_Issued,Is_Installment_Day,Weeks_Passed,Installments_Expected,Installment_Amount,Expected_Paid,Expected_Before_Today,Arrears,Due_Today,Mobile_Phone_No,Status,Client_Loan_Count,Client_Type
 
 - Final Answer must be professional HTML only, no backticks or markdown
 - Wrap response in: <div class="response-container">...</div>
@@ -103,40 +82,6 @@ Final Answer: <div class="response-container"><div style="background: linear-gra
 )
 
 @tool
-def fetch_data(query: str):
-    """
-    Fetches data from a processed dataset using DuckDB-style SQL.
-    """
-    try:
-        if not isinstance(query, str) or query.strip() == "":
-            return "Error: Query must be a non-empty string."
-
-        # Remove triple backticks or quotes
-        query = query.strip().strip("`").strip("'").strip('"')
-
-        # Attempt to extract the SQL part only
-        match = re.search(r'(SELECT .*?FROM .*?)(?:;|\n|$)', query, re.IGNORECASE | re.DOTALL)
-        if match:
-            query = match.group(1).strip()
-        else:
-            return "Error: Could not parse a valid SQL query."
-
-        print("Executing SQL query:", query)
-
-        df = pd.read_csv("processed_data.csv")
-        print("Executing: ",query)
-        result = sqldf(query)
-        
-        # Return plain text result for the agent to process
-        if not result.empty:
-            return result.to_string(index=False)
-        else:
-            return "No data found matching your query."
-            
-    except Exception as e:
-        return f"Error: {e}"
-
-@tool
 def python_calculator(code: str):
     """
     Executes Python code for calculations and data analysis. Use this for complex mathematical operations, statistical analysis, or custom calculations.
@@ -150,7 +95,7 @@ def python_calculator(code: str):
     try:
         # Create a safe execution environment
         import numpy as np
-        import pandas as pd
+        import pandas as pd        
         from datetime import datetime, timedelta
         import math
         import statistics
@@ -163,12 +108,7 @@ def python_calculator(code: str):
         return f"Error in Python calculation: {e}"
 
 # Create tools list
-tools = [
-    Tool(
-        name="fetch_data",
-        func=fetch_data,
-        description="Use this tool to query loan data. Input should be a SQL SELECT statement using the 'df' table. Note: Column names with spaces must be enclosed in backticks (e.g., `Total Paid`, `Total Charged`)."
-    ),
+tools = [   
     Tool(
         name="python_calculator",
         func=python_calculator,

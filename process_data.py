@@ -38,6 +38,10 @@ for key, url in responseDict.items():
         file_path = f"{key}.csv" 
 
         df = pd.DataFrame(data)
+        try:
+           df.rename(columns={'Total Paid': 'Total_Paid', 'Total Charged': 'Total_Charged'}, inplace=True)
+        except KeyError as e:
+            print(f"KeyError: {e} - This column may not exist in the data.")
         df.to_csv(file_path, index=False)
 
         print(f"Data exported successfully to {file_path}")
