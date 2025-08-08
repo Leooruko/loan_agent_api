@@ -1,0 +1,73 @@
+#!/usr/bin/env python3
+"""
+Test the improved semicolon approach with exec/eval combination.
+"""
+
+import pandas as pd
+
+def test_improved_semicolon():
+    """Test the improved semicolon approach"""
+    
+    try:
+        # Create a safe execution environment
+        import numpy as np
+        import pandas as pd        
+        from datetime import datetime, timedelta
+        import math
+        import statistics
+        import json
+        
+        local_namespace = {
+            'pd': pd,
+            'np': np,
+            'datetime': datetime,
+            'timedelta': timedelta,
+            'math': math,
+            'statistics': statistics,
+            'json': json
+        }
+        
+        # Test the improved patterns
+        tests = [
+            ("Simple count", "len(pd.read_csv('processed_data.csv'))"),
+            ("Total paid", "df = pd.read_csv('processed_data.csv'); df['Total_Paid'].sum()"),
+            ("Unique clients", "df = pd.read_csv('processed_data.csv'); len(df['Client_Code'].unique())"),
+            ("Best manager", "df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name")
+        ]
+        
+        for test_name, code in tests:
+            try:
+                # Simulate the improved approach
+                if ';' in code:
+                    # Use exec for multi-line code
+                    exec(code, {"__builtins__": __builtins__}, local_namespace)
+                    # Get the last result
+                    lines = code.split(';')
+                    last_line = lines[-1].strip()
+                    if last_line and not last_line.startswith('#'):
+                        result = eval(last_line, {"__builtins__": __builtins__}, local_namespace)
+                    else:
+                        # If no clear result, return the last non-empty line
+                        for line in reversed(lines):
+                            line = line.strip()
+                            if line and not line.startswith('#'):
+                                result = eval(line, {"__builtins__": __builtins__}, local_namespace)
+                                break
+                else:
+                    # Use eval for single expressions
+                    result = eval(code, {"__builtins__": __builtins__}, local_namespace)
+                
+                print(f"✓ {test_name}: {result}")
+            except Exception as e:
+                print(f"✗ {test_name}: {e}")
+        
+        return True
+        
+    except Exception as e:
+        print(f"✗ Test failed: {e}")
+        return False
+
+if __name__ == "__main__":
+    print("Testing Improved Semicolon Approach")
+    print("=" * 40)
+    test_improved_semicolon()

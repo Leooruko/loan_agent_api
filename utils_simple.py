@@ -53,22 +53,20 @@ RULES:
 - Always use the python_calculator tool for data analysis - never try to access data directly
 
 PYTHON CODING GUIDELINES:
-- Always import required libraries first: import pandas as pd
-- Always load data first: df = pd.read_csv('processed_data.csv')
-- For specific analysis, load individual files: loans_df = pd.read_csv('loans.csv')
-- Use proper pandas operations: df.groupby(), df.agg(), df.sort_values()
-- Handle missing data: df.dropna() or df.fillna()
-- Format numbers: f"{value:,.2f}" for currency, f"{percentage:.1f}%" for percentages
-- Return results as formatted strings that can be used in HTML
-- IMPORTANT: Always include both import and data loading in the same code block
-- CRITICAL: seperate different statements with semicolons, do not use newlines or comments in the code
-- CRITICAL: Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
+- Use multiple lines separated by semicolons for complex operations
+- Examples: 
+  - Simple: len(pd.read_csv('processed_data.csv'))
+  - Complex: df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name
+- Do NOT use import statements (pandas is already available)
+- Do NOT use comments (#) or actual newlines (\n)
+- Use correct column names: Client_Code (not Client), Managed_By, Total_Paid, etc.
+- The pandas library (pd) is already available in the execution environment
 
 EXAMPLE 1 - Top Performing Manager:
 Thought: I need to find the top performing manager by total payments
 Action: python_calculator
-Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; total_paid = top_manager.iloc[0]; f"Manager: {manager_name}, Total Paid: {total_paid:,.2f}"
-Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>{manager_name}</strong> is our leading performer with <span style="background: rgba(255, 255, 255, 0.2); padding: 2px 6px; border-radius: 4px; font-weight: bold;">KES {total_paid:,.2f}</span> in total payments. Outstanding performance in client management.</p></div></div>
+Action Input: df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>{manager_name}</strong> is our leading performer with the highest total payments. Outstanding performance in client management.</p></div></div>
 
 EXAMPLE 2 - Portfolio Statistics:
 Thought: I need to calculate portfolio statistics including total loans, average amount, and performance metrics
@@ -103,14 +101,20 @@ Final Answer: <div class="response-container"><div style="background: linear-gra
 EXAMPLE 7 - Count Unique Clients:
 Thought: I need to count the number of unique clients in the system
 Action: python_calculator
-Action Input: len(pd.read_csv('processed_data.csv')['Client_Code'].unique())
+Action Input: df = pd.read_csv('processed_data.csv'); len(df['Client_Code'].unique())
 Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Client Count Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our organization serves <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{unique_clients}</span> unique clients across our loan portfolio. This represents our current client base and market reach.</p></div></div>
 
 EXAMPLE 8 - Simple Count (Use this pattern for any counting):
 Thought: I need to count something simple
 Action: python_calculator
-Action Input: len(pd.read_csv('processed_data.csv'))
+Action Input: df = pd.read_csv('processed_data.csv'); len(df)
 Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Count Analysis</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Total count: <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{count}</span></p></div></div>
+
+EXAMPLE 9 - Best Performing Manager:
+Thought: I need to find the best performing manager
+Action: python_calculator
+Action Input: df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Best Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">The best performing manager is <span style="background: rgba(255, 255, 255, 0.3); padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 1.1em;">{manager_name}</span> with the highest total payments.</p></div></div>
 '''
 )
 
@@ -145,17 +149,40 @@ def python_calculator(code: str):
             'json': json
         }
                 
-        if 'df' in code and 'pd.read_csv' not in code:
-            return "Error: You need to load the data first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
-                
+        # Check for newlines and comments that cause syntax errors
+        if '\n' in code or '#' in code:
+            return "Error: Do not use newlines or comments in the code. Use semicolons to separate statements."
+        
+        # Check for import statements (not needed)
+        if 'import ' in code:
+            return "Error: Do not use import statements. The pandas library (pd) is already available."
+        
+        # Check for common column name mistakes
         if "df['Client']" in code:
             return "Error: Use 'Client_Code' instead of 'Client'. The correct column name is 'Client_Code'."
-                
-        if 'df' in code and 'pd.read_csv' not in code:
-            return "Error: You need to load the data first. Use: import pandas as pd; df = pd.read_csv('processed_data.csv'); [your analysis]"
         
                 
-        result = eval(code, {"__builtins__": __builtins__}, local_namespace)
+        # Check if code contains semicolons (multi-line)
+        if ';' in code:
+            # Use exec for multi-line code
+            exec(code, {"__builtins__": __builtins__}, local_namespace)
+            # Get the last result (assuming the last statement is the result)
+            # This is a simple approach - the last variable or expression should be the result
+            lines = code.split(';')
+            last_line = lines[-1].strip()
+            if last_line and not last_line.startswith('#'):
+                result = eval(last_line, {"__builtins__": __builtins__}, local_namespace)
+            else:
+                # If no clear result, return the last non-empty line
+                for line in reversed(lines):
+                    line = line.strip()
+                    if line and not line.startswith('#'):
+                        result = eval(line, {"__builtins__": __builtins__}, local_namespace)
+                        break
+        else:
+            # Use eval for single expressions
+            result = eval(code, {"__builtins__": __builtins__}, local_namespace)
+        
         return str(result)
         
     except SyntaxError as e:
