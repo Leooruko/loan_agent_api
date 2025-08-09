@@ -38,12 +38,24 @@ OUTPUT FORMAT (must follow exactly in this order):
 1. Thought: reasoning about what data to analyze
 2. Action: always "python_calculator"
 3. Action Input: Python code using only the CSVs provided
-4. Final Answer: professional HTML wrapped in <div class="response-container">...</div>
+4. Observation: result from the tool
+5. Thought: reasoning about the result
+6. Action: Final Answer
+7. Action Input: professional HTML wrapped in <div class="response-container">...</div>
 
+CRITICAL: You MUST include the Observation step after using python_calculator tool.
 Failure to follow this exact format will be considered an invalid response.
 
 CSV DATA SOURCES – Use only these CSVs and their exact column names:
 
+IMPORTANT: For most queries, use ONLY processed_data.csv as it contains all the necessary information already merged and processed.
+
+processed_data.csv (RECOMMENDED - Use this for most queries):
+    Managed_By, Loan_No, Loan_Product_Type, Client_Code, Client_Name, Issued_Date, Amount_Disbursed, Installments, Total_Paid, Total_Charged,
+    Days_Since_Issued, Is_Installment_Day, Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
+    Arrears, Due_Today, Mobile_Phone_No, Status, Client_Loan_Count, Client_Type
+
+Other CSVs (only use if specifically needed):
 loans.csv:
     Loan_No, Loan_Product_Type, Client_Code, Issued_Date, Approved_Amount, Manager, Recruiter, Installments, Expected_Date_of_Completion
 
@@ -53,13 +65,9 @@ ledger.csv:
 clients.csv:
     Client_Code, Name, Gender, Age
 
-processed_data.csv:
-    Managed_By, Loan_No, Loan_Product_Type, Client_Code, Client_Name, Issued_Date, Amount_Disbursed, Installments, Total_Paid, Total_Charged,
-    Days_Since_Issued, Is_Installment_Day, Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
-    Arrears, Due_Today, Mobile_Phone_No, Status, Client_Loan_Count, Client_Type
-
 RULES:
 - Always use the python_calculator tool for all analysis and statistics.
+- PREFER processed_data.csv for most queries - it's already merged and processed.
 - Never access CSVs directly outside the Action Input section.
 - Always import pandas as pd.
 - If multiple calculations are needed, do them all in one Action Input section.
@@ -67,6 +75,7 @@ RULES:
 - Never fabricate numbers or details.
 - Keep HTML structure and CSS consistent with the template.
 - No markdown, no commentary in Final Answer, and no deviations in color scheme.
+- DO NOT load multiple CSV files unless absolutely necessary.
 
 HTML REQUIREMENTS:
 - Wrap output in <div class="response-container">...</div>
@@ -80,10 +89,14 @@ HTML REQUIREMENTS:
 </div>
 
 PYTHON CODING GUIDELINES:
+- ALWAYS start with: import pandas as pd; df = pd.read_csv('processed_data.csv')
+- Use semicolons (;) to separate statements
 - Example of simple count:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
 - Example of grouped sum:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name
+- Example of best client:
+    import pandas as pd; df = pd.read_csv('processed_data.csv'); best_client = df.groupby('Client_Code')['Total_Paid'].sum().sort_values(ascending=False).head(1); client_code = best_client.index[0]; client_code
 
 EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
@@ -94,8 +107,10 @@ EXAMPLE – Top Performing Manager:
 Thought: I need to find the top performing manager by total payments
 Action: python_calculator
 Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name
-Final Answer:
-<div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>{manager_name}</strong> is our leading performer with the highest total payments. Outstanding performance in client management.</p></div></div>
+Observation: GREENCOM\\JOSEPH.MUTUNGA
+Thought: I have the manager name, now I need to provide the final answer
+Action: Final Answer
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>GREENCOM\JOSEPH.MUTUNGA</strong> is our leading performer with the highest total payments.</p></div></div>
 """
 
 )
@@ -131,35 +146,34 @@ def python_calculator(code: str):
             'json': json
         }
                 
-        # Check for newlines and comments that cause syntax errors
-        if '\n' in code or '#' in code:
-            return "Error: Use semicolons to separate statements."
+        # Clean the code by removing newlines and comments, replacing with semicolons
+        cleaned_code = code.replace('\n', ';').replace('#', ';')
+        # Remove empty statements and extra semicolons
+        cleaned_code = ';'.join([stmt.strip() for stmt in cleaned_code.split(';') if stmt.strip()])
         
         # Check for common column name mistakes
-        if "df['Client']" in code:
+        if "df['Client']" in cleaned_code:
             return "Error: Use 'Client_Code' instead of 'Client'. The correct column name is 'Client_Code'."
         
-                
-        # Check if code contains semicolons (multi-line)
-        if ';' in code:
+        # Execute the cleaned code
+        if ';' in cleaned_code:
             # Use exec for multi-line code
-            exec(code, {"__builtins__": __builtins__}, local_namespace)
+            exec(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
             # Get the last result (assuming the last statement is the result)
-            # This is a simple approach - the last variable or expression should be the result
-            lines = code.split(';')
+            lines = cleaned_code.split(';')
             last_line = lines[-1].strip()
-            if last_line and not last_line.startswith('#'):
+            if last_line:
                 result = eval(last_line, {"__builtins__": __builtins__}, local_namespace)
             else:
                 # If no clear result, return the last non-empty line
                 for line in reversed(lines):
                     line = line.strip()
-                    if line and not line.startswith('#'):
+                    if line:
                         result = eval(line, {"__builtins__": __builtins__}, local_namespace)
                         break
         else:
             # Use eval for single expressions
-            result = eval(code, {"__builtins__": __builtins__}, local_namespace)
+            result = eval(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
         
         return str(result)
         
@@ -193,7 +207,8 @@ agent = initialize_agent(
     verbose=True,
     handle_parsing_errors=True,
     max_iterations=AI_CONFIG['MAX_ITERATIONS'],  # More iterations for complex queries
-    memory=conversation_memory
+    memory=conversation_memory,
+    early_stopping_method="generate"  # Stop early if agent gets stuck
 )
 
 
@@ -205,8 +220,17 @@ async def promt_llm(query, conversation_history=None):
         if agent is None:
             return "I'm having trouble initializing the AI system. Please restart the application."
         
-        response = agent.invoke({"input": query})
-        result = response.get("output", "No response generated")
+        try:
+            response = agent.invoke({"input": query})
+            result = response.get("output", "No response generated")
+        except Exception as agent_error:
+            # Handle agent parsing errors specifically
+            if "Could not parse LLM output" in str(agent_error):
+                logger.warning(f"Agent parsing error: {agent_error}")
+                return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Processing Error</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I encountered an issue processing your request. Please try rephrasing your question or ask about a different aspect of the loan portfolio.</p></div></div>'
+            else:
+                logger.error(f"Agent execution error: {agent_error}")
+                return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">System Error</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I encountered a system error. Please try again or contact support if the issue persists.</p></div></div>'
         
         if isinstance(result, str):
             # Look for "Final Answer:" and extract everything after it
