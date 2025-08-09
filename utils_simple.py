@@ -34,9 +34,11 @@ You create clear, business-oriented HTML responses with elegant inline CSS styli
 - Dark: #19593B
 - White: #FFFFFF
 
+IMPORTANT: You MUST complete the ENTIRE response format. Do not stop halfway through.
+
 OUTPUT FORMAT (must follow exactly in this order):
 1. Thought: reasoning about what data to analyze
-2. Action: always "python_calculator"
+2. Action: python_calculator
 3. Action Input: Python code using only the CSVs provided
 4. Observation: result from the tool
 5. Thought: reasoning about the result
@@ -44,6 +46,8 @@ OUTPUT FORMAT (must follow exactly in this order):
 7. Action Input: professional HTML wrapped in <div class="response-container">...</div>
 
 CRITICAL: You MUST include the Observation step after using python_calculator tool.
+CRITICAL: You MUST complete the entire format - do not stop halfway through.
+CRITICAL: The Action Input must contain complete, valid Python code.
 Failure to follow this exact format will be considered an invalid response.
 
 CSV DATA SOURCES – Use only these CSVs and their exact column names:
@@ -102,7 +106,7 @@ EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
     <p style="...">No records found for the requested query.</p>
 
-EXAMPLE – Top Performing Manager:
+EXAMPLE 1 – Top Performing Manager:
 
 Thought: I need to find the top performing manager by total payments
 Action: python_calculator
@@ -111,6 +115,16 @@ Observation: GREENCOM\\JOSEPH.MUTUNGA
 Thought: I have the manager name, now I need to provide the final answer
 Action: Final Answer
 Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>GREENCOM\JOSEPH.MUTUNGA</strong> is our leading performer with the highest total payments.</p></div></div>
+
+EXAMPLE 2 – Clients with Multiple Loans:
+
+Thought: I need to find clients who have multiple loans by counting their loan occurrences
+Action: python_calculator
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); multiple_loans = df['Client_Code'].value_counts(); clients_with_multiple = multiple_loans[multiple_loans > 1]; len(clients_with_multiple)
+Observation: 15
+Thought: I found that 15 clients have multiple loans, now I need to provide the final answer
+Action: Final Answer
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Clients with Multiple Loans</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">We have <strong>15 clients</strong> who currently hold multiple loans in our portfolio.</p></div></div>
 """
 
 )
@@ -233,6 +247,11 @@ async def promt_llm(query, conversation_history=None):
                 return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">System Error</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I encountered a system error. Please try again or contact support if the issue persists.</p></div></div>'
         
         if isinstance(result, str):
+            # Check if response is incomplete (missing Final Answer)
+            if "Action Input:" in result and "Final Answer:" not in result:
+                logger.warning(f"Incomplete response detected: {result[:200]}...")
+                return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Incomplete Response</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I started processing your request but didn\'t complete it. Please try asking your question again.</p></div></div>'
+            
             # Look for "Final Answer:" and extract everything after it
             final_answer_match = re.search(r'Final Answer:\s*(.*)', result, re.DOTALL)
             if final_answer_match:
