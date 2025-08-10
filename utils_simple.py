@@ -113,19 +113,14 @@ CSV DATA SOURCES – Use only these CSVs and their exact column names:
 
 IMPORTANT: For most queries, use ONLY processed_data.csv as it contains all the necessary information already merged and processed.
 
-processed_data.csv (RECOMMENDED - Use this for general queries ):
-    Managed_By, Loan_No, Loan_Product_Type, Client_Code, Client_Name, Issued_Date, Amount_Disbursed, Installments, Total_Paid, Total_Charged,
-    Days_Since_Issued, Is_Installment_Day, Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
-    Arrears, Due_Today, Mobile_Phone_No, Status, Client_Loan_Count, Client_Type
-
-Other CSVs (only use if specifically needed):
-loans.csv (only use if specific information about a loan is needed):
+You only have access to the following CSVs:
+loans.csv (contains unique entries for each loan taken):
     Loan_No, Loan_Product_Type, Client_Code, Issued_Date, Approved_Amount, Manager, Recruiter, Installments, Expected_Date_of_Completion
 
-ledger.csv (IMPORTANT: Use this for daily transaction analysis:
+ledger.csv (Contains daily transaction payment information on the loans made by clients):
     Posting_Date, Loan_No, Loan_Product_Type, Interest_Paid, Principle_Paid, Total_Paid
 
-clients.csv(only use if specific information about a client is needed):
+clients.csv(Contains information about the clients taking loans):
     Client_Code, Name, Gender, Age
 
 RULES:
@@ -163,7 +158,6 @@ PYTHON CODING GUIDELINES:
 - ALWAYS start with: import pandas as pd; df = pd.read_csv('processed_data.csv')
 - Use semicolons (;) to separate statements
 - The LAST statement must be a single expression that evaluates to the final answer (no assignment)
-- Do NOT end with something like: final_answer = ... or top_arrears = ...
 - End with the expression itself, e.g.: top_arrears.to_dict() or len(multiple_loans_clients)
 - NEVER use backticks or markdown formatting in Action Input
 - WRONG: Action Input: ```python import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df) ```
