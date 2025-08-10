@@ -47,26 +47,26 @@ OUTPUT FORMAT (must follow exactly in this order):
 
 CRITICAL: You MUST include the Observation step after using python_calculator tool.
 CRITICAL: You MUST complete the entire format - do not stop halfway through.
-CRITICAL: The Action Input must contain complete, valid Python code.
+CRITICAL: The Action Input must contain complete, valid Python code WITHOUT any backticks or markdown formatting.
 Failure to follow this exact format will be considered an invalid response.
 
 CSV DATA SOURCES – Use only these CSVs and their exact column names:
 
 IMPORTANT: For most queries, use ONLY processed_data.csv as it contains all the necessary information already merged and processed.
 
-processed_data.csv (RECOMMENDED - Use this for most queries):
+processed_data.csv (RECOMMENDED - Use this for general queries ):
     Managed_By, Loan_No, Loan_Product_Type, Client_Code, Client_Name, Issued_Date, Amount_Disbursed, Installments, Total_Paid, Total_Charged,
     Days_Since_Issued, Is_Installment_Day, Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
     Arrears, Due_Today, Mobile_Phone_No, Status, Client_Loan_Count, Client_Type
 
 Other CSVs (only use if specifically needed):
-loans.csv:
+loans.csv (only use if specific information about a loan is needed):
     Loan_No, Loan_Product_Type, Client_Code, Issued_Date, Approved_Amount, Manager, Recruiter, Installments, Expected_Date_of_Completion
 
-ledger.csv:
+ledger.csv (IMPORTANT: Use this for daily transaction analysis:
     Posting_Date, Loan_No, Loan_Product_Type, Interest_Paid, Principle_Paid, Total_Paid
 
-clients.csv:
+clients.csv(only use if specific information about a client is needed):
     Client_Code, Name, Gender, Age
 
 RULES:
@@ -80,6 +80,8 @@ RULES:
 - Keep HTML structure and CSS consistent with the template.
 - No markdown, no commentary in Final Answer, and no deviations in color scheme.
 - DO NOT load multiple CSV files unless absolutely necessary.
+- DO NOT use backticks in the Action Input.
+- NEVER wrap Python code in ```python or ``` in Action Input - write the code directly.
 
 HTML REQUIREMENTS:
 - Wrap output in <div class="response-container">...</div>
@@ -95,6 +97,9 @@ HTML REQUIREMENTS:
 PYTHON CODING GUIDELINES:
 - ALWAYS start with: import pandas as pd; df = pd.read_csv('processed_data.csv')
 - Use semicolons (;) to separate statements
+- NEVER use backticks or markdown formatting in Action Input
+- WRONG: Action Input: ```python import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df) ```
+- CORRECT: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
 - Example of simple count:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
 - Example of grouped sum:
@@ -120,7 +125,7 @@ EXAMPLE 2 – Clients with Multiple Loans:
 
 Thought: I need to find clients who have multiple loans by counting their loan occurrences
 Action: python_calculator
-Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); multiple_loans = df['Client_Code'].value_counts(); clients_with_multiple = multiple_loans[multiple_loans > 1]; len(clients_with_multiple)
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); unique_clients = df['Client_Code'].unique(); multiple_loans_clients = list(filter(lambda x: df['Client_Code'].value_counts()[x] > 1, unique_clients)); len(multiple_loans_clients)
 Observation: 15
 Thought: I found that 15 clients have multiple loans, now I need to provide the final answer
 Action: Final Answer
@@ -159,9 +164,29 @@ def python_calculator(code: str):
             'statistics': statistics,
             'json': json
         }
-                
+        
+        # Clean the code by removing markdown formatting and backticks
+        cleaned_code = code.strip()
+        
+        # Remove markdown code blocks (```python ... ```)
+        if cleaned_code.startswith('```'):
+            # Find the first and last backticks
+            first_backticks = cleaned_code.find('```')
+            if first_backticks != -1:
+                # Find the end of the first line (language identifier)
+                first_newline = cleaned_code.find('\n', first_backticks)
+                if first_newline != -1:
+                    # Find the closing backticks
+                    closing_backticks = cleaned_code.rfind('```')
+                    if closing_backticks > first_newline:
+                        # Extract the code between the backticks
+                        cleaned_code = cleaned_code[first_newline + 1:closing_backticks].strip()
+        
+        # Remove any remaining backticks at the beginning or end
+        cleaned_code = cleaned_code.strip('`')
+        
         # Clean the code by removing newlines and comments, replacing with semicolons
-        cleaned_code = code.replace('\n', ';').replace('#', ';')
+        cleaned_code = cleaned_code.replace('\n', ';').replace('#', ';')
         # Remove empty statements and extra semicolons
         cleaned_code = ';'.join([stmt.strip() for stmt in cleaned_code.split(';') if stmt.strip()])
         
