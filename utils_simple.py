@@ -367,7 +367,10 @@ def python_calculator(code: str):
         # Execute the cleaned code and capture the result
         local_namespace["__builtins__"] = __builtins__
         if ';' in cleaned_code:
-           result = exec(cleaned_code, local_namespace, local_namespace)
+           # Execute all lines except the last one
+           exec(cleaned_code, local_namespace, local_namespace)
+           # Evaluate the last line to get the result
+           result = eval(cleaned_code.split(';')[-1], local_namespace, local_namespace)
         else:
             # Use eval for single expressions
             result = eval(cleaned_code, local_namespace, local_namespace)
