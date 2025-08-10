@@ -37,8 +37,10 @@ You have access to the following CSV files for analysis:
 You can write Python code directly in your responses to analyze the data. When you need to perform calculations or analysis:
 
 1. Write the Python code you need
-2. Execute it to get the results
+2. Execute it to get the results  
 3. Use those results in your final HTML response
+
+Since you have direct access to the data files, you can execute Python code to perform any analysis you need.
 
 EXAMPLE RESPONSE FORMAT:
 
@@ -77,20 +79,8 @@ BRAND COLORS:
 """
 )
 
-# Create a simple tool for basic operations (optional)
-@tool
-def get_data_info():
-    """
-    Get basic information about available data files.
-    """
-    try:
-        df = pd.read_csv('processed_data.csv')
-        return f"processed_data.csv has {len(df)} rows and {len(df.columns)} columns"
-    except Exception as e:
-        return f"Error reading data: {str(e)}"
-
-# Create tools list (minimal)
-tools = [get_data_info]
+# Create tools list (empty - no tools needed)
+tools = []
 
 # Create agent executor with memory
 agent = initialize_agent(
