@@ -127,6 +127,8 @@ PYTHON CODING GUIDELINES:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); top_managers.to_dict()
 - Example of total interest from ledger:
     import pandas as pd; ledger = pd.read_csv('ledger.csv'); total_interest = ledger['Interest_Paid'].sum(); total_interest
+- Example of clients with highest arrears:
+    import pandas as pd; df = pd.read_csv('processed_data.csv'); arrears_data = df['Arrears'].abs(); top_arrears = arrears_data.sort_values(ascending=False).head(5); top_arrears.to_dict()
 
 EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
@@ -172,7 +174,17 @@ Thought: I found that the total interest paid is 1,272,040, now I need to provid
 Action: Final Answer
 Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Total Interest Paid</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">The total interest paid from the ledger information is <strong>1,272,040</strong>.</p></div></div>
 
-EXAMPLE 4 – Clients with Multiple Loans:
+EXAMPLE 4 – Clients with Highest Arrears:
+
+Thought: I need to find clients with the highest arrears by sorting the Arrears column
+Action: python_calculator
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); arrears_data = df['Arrears'].abs(); top_arrears = arrears_data.sort_values(ascending=False).head(5); top_arrears.to_dict()
+Observation: {'CLIENT001': 5000, 'CLIENT002': 4500, 'CLIENT003': 4000, 'CLIENT004': 3500, 'CLIENT005': 3000}
+Thought: I found the top 5 clients with highest arrears, now I need to provide the final answer
+Action: Final Answer
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Clients with Highest Arrears</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">The top 5 clients with the highest arrears are: <strong>CLIENT001 (5,000)</strong>, <strong>CLIENT002 (4,500)</strong>, <strong>CLIENT003 (4,000)</strong>, <strong>CLIENT004 (3,500)</strong>, and <strong>CLIENT005 (3,000)</strong>.</p></div></div>
+
+EXAMPLE 5 – Clients with Multiple Loans:
 
 Thought: I need to find clients who have multiple loans by counting their loan occurrences
 Action: python_calculator
@@ -263,6 +275,14 @@ def python_calculator(code: str):
         # Check for common column name mistakes
         if "df['Client']" in cleaned_code:
             return "Error: Use 'Client_Code' instead of 'Client'. The correct column name is 'Client_Code'."
+        
+        # Check for common CSV file name mistakes and correct them
+        if "clients_data.csv" in cleaned_code:
+            cleaned_code = cleaned_code.replace("clients_data.csv", "processed_data.csv")
+            logger.info("Corrected CSV file name from 'clients_data.csv' to 'processed_data.csv'")
+        if "client_data.csv" in cleaned_code:
+            cleaned_code = cleaned_code.replace("client_data.csv", "processed_data.csv")
+            logger.info("Corrected CSV file name from 'client_data.csv' to 'processed_data.csv'")
         
         # Check if code still contains backticks after cleaning
         if '`' in cleaned_code or '```' in cleaned_code:
