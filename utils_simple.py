@@ -162,9 +162,14 @@ HTML REQUIREMENTS:
 PYTHON CODING GUIDELINES:
 - ALWAYS start with: import pandas as pd; df = pd.read_csv('processed_data.csv')
 - Use semicolons (;) to separate statements
+- The LAST statement must be a single expression that evaluates to the final answer (no assignment)
+- Do NOT end with something like: final_answer = ... or top_arrears = ...
+- End with the expression itself, e.g.: top_arrears.to_dict() or len(multiple_loans_clients)
 - NEVER use backticks or markdown formatting in Action Input
 - WRONG: Action Input: ```python import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df) ```
 - CORRECT: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
+- WRONG: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_arrears = df['Arrears'].abs().sort_values(ascending=False).head(5)
+- CORRECT: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Arrears'].abs().sort_values(ascending=False).head(5).to_dict()
 - WRONG: Action Input: ```python
 import pandas as pd
 df = pd.read_csv('processed_data.csv')
@@ -368,9 +373,7 @@ def python_calculator(code: str):
         local_namespace["__builtins__"] = __builtins__
         if ';' in cleaned_code:
            # Execute all lines except the last one
-           exec(cleaned_code, local_namespace, local_namespace)
-           # Evaluate the last line to get the result
-           result = eval(cleaned_code.split(';')[-1], local_namespace, local_namespace)
+           result = exec(cleaned_code, local_namespace, local_namespace)           
         else:
             # Use eval for single expressions
             result = eval(cleaned_code, local_namespace, local_namespace)
