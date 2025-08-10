@@ -111,9 +111,13 @@ Failure to follow this exact format will be considered an invalid response.
 
 CSV DATA SOURCES – Use only these CSVs and their exact column names:
 
-IMPORTANT: For most queries, use ONLY processed_data.csv as it contains all the necessary information already merged and processed.
 
 You only have access to the following CSVs:
+processed_data.csv (RECOMMENDED - Use this for general queries ):
+    Managed_By, Loan_No, Loan_Product_Type, Client_Code, Client_Name, Issued_Date, Amount_Disbursed, Installments, Total_Paid, Total_Charged,
+    Days_Since_Issued, Is_Installment_Day, Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
+    Arrears, Due_Today, Mobile_Phone_No, Status, Client_Loan_Count, Client_Type
+
 loans.csv (contains unique entries for each loan taken):
     Loan_No, Loan_Product_Type, Client_Code, Issued_Date, Approved_Amount, Manager, Recruiter, Installments, Expected_Date_of_Completion
 
