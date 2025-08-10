@@ -318,9 +318,7 @@ def python_calculator(code: str):
         cleaned_code = re.sub(r'`.*?`', '', cleaned_code, flags=re.DOTALL)
         cleaned_code = cleaned_code.replace('```', '').replace('`', '')
         
-        # Log the cleaned code for debugging
-        logger.debug(f"Cleaned code: {repr(cleaned_code)}")
-        
+               
         # Clean the code by removing newlines and comments, replacing with semicolons
         cleaned_code = cleaned_code.replace('\n', ';').replace('#', ';')
         
@@ -343,11 +341,21 @@ def python_calculator(code: str):
             cleaned_code = cleaned_code.replace("client_data.csv", "processed_data.csv")
             logger.info("Corrected CSV file name from 'client_data.csv' to 'processed_data.csv'")
         
-        # Check if code still contains backticks after cleaning
-        if '`' in cleaned_code or '```' in cleaned_code:
-            logger.warning(f"Backticks still found in cleaned code: {repr(cleaned_code)}")
-            # Remove any remaining backticks
-            cleaned_code = cleaned_code.replace('```', '').replace('`', '')
+        # Fix lambda function scoping issues by replacing filter with list comprehension
+        if "filter(lambda x:" in cleaned_code:
+            # Replace the problematic filter pattern with a list comprehension
+            import re
+            # Pattern to match: filter(lambda x: df['Client_Code'].value_counts()[x] > 1, unique_clients)
+            pattern = r'filter\(lambda x: ([^,]+), ([^)]+)\)'
+            match = re.search(pattern, cleaned_code)
+            if match:
+                condition = match.group(1)
+                iterable = match.group(2)
+                # Replace with list comprehension
+                replacement = f"[x for x in {iterable} if {condition}]"
+                cleaned_code = re.sub(pattern, replacement, cleaned_code)
+                logger.info("Fixed lambda function scoping issue by replacing filter with list comprehension")
+
         
         # Ensure the code starts with import
         if not cleaned_code.startswith('import'):
@@ -361,29 +369,7 @@ def python_calculator(code: str):
         
         # Execute the cleaned code and capture the result
         if ';' in cleaned_code:
-            # Add a result capture mechanism
-            lines = [line.strip() for line in cleaned_code.split(';') if line.strip()]
-            if lines:
-                # Modify the last line to capture its result
-                last_line = lines[-1]
-                if not last_line.startswith('import') and not last_line.startswith('df =') and not last_line.startswith('ledger ='):
-                    # Capture the result of the last statement
-                    modified_code = ';'.join(lines[:-1]) + ';__result__ = ' + last_line
-                else:
-                    modified_code = cleaned_code
-            else:
-                modified_code = cleaned_code
-            
-            # Execute the modified code
-            exec(modified_code, {"__builtins__": __builtins__}, local_namespace)
-            
-            # Get the result
-            if '__result__' in local_namespace:
-                result = local_namespace['__result__']
-            elif 'df' in local_namespace:
-                result = f"DataFrame loaded with {len(local_namespace['df'])} rows"
-            else:
-                result = "Code executed successfully"
+           result = exec(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
         else:
             # Use eval for single expressions
             result = eval(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
