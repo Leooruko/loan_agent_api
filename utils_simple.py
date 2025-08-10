@@ -34,6 +34,8 @@ You create clear, business-oriented HTML responses with elegant inline CSS styli
 - Dark: #19593B
 - White: #FFFFFF
 
+⚠️ CRITICAL FORMAT RULE: Action Input must be a SINGLE LINE of Python code with NO backticks, NO markdown, NO newlines.
+
 IMPORTANT: You MUST complete the ENTIRE response format. Do not stop halfway through.
 
 OUTPUT FORMAT (must follow exactly in this order):
@@ -50,6 +52,8 @@ CRITICAL: You MUST complete the entire format - do not stop halfway through.
 CRITICAL: The Action Input must contain complete, valid Python code WITHOUT any backticks or markdown formatting.
 CRITICAL: NEVER use ```python or ``` in Action Input - write the code directly.
 CRITICAL: NEVER use markdown formatting in Action Input - only plain Python code.
+CRITICAL: NEVER use ``` or ` anywhere in Action Input - only plain Python code.
+CRITICAL: Action Input must be a single line of Python code separated by semicolons.
 Failure to follow this exact format will be considered an invalid response.
 
 CSV DATA SOURCES – Use only these CSVs and their exact column names:
@@ -88,6 +92,8 @@ RULES:
 - ONLY use the python_calculator tool - no other tools exist.
 - NEVER try to use "python_calculator (continued)" or similar variations.
 - NEVER use ``` or ` in Action Input - only plain Python code.
+- Action Input format: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); your_calculation_here
+- NEVER use multiple lines or newlines in Action Input.
 
 HTML REQUIREMENTS:
 - Wrap output in <div class="response-container">...</div>
@@ -107,6 +113,8 @@ PYTHON CODING GUIDELINES:
 - WRONG: Action Input: ```python import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df) ```
 - CORRECT: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
 - For complex queries, do ALL calculations in ONE Action Input
+- EXACT FORMAT: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); your_calculation_here
+- NEVER use multiple lines, newlines, or backticks in Action Input
 - Example of simple count:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
 - Example of grouped sum:
@@ -117,6 +125,8 @@ PYTHON CODING GUIDELINES:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); product_counts = df['Loan_Product_Type'].value_counts(); sorted_products = product_counts.sort_values(ascending=False); top_3 = sorted_products.head(3); top_3.to_dict()
 - Example of managers with most clients:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); top_managers.to_dict()
+- Example of total interest from ledger:
+    import pandas as pd; ledger = pd.read_csv('ledger.csv'); total_interest = ledger['Interest_Paid'].sum(); total_interest
 
 EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
@@ -152,7 +162,17 @@ Thought: I have the top 3 most popular loan products with their counts, now I ne
 Action: Final Answer
 Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Most Popular Loan Products</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our top 3 most popular loan products are: <strong>Personal Loan (45 loans)</strong>, <strong>Business Loan (32 loans)</strong>, and <strong>Education Loan (18 loans)</strong>.</p></div></div>
 
-EXAMPLE 3 – Clients with Multiple Loans:
+EXAMPLE 3 – Total Interest from Ledger:
+
+Thought: I need to find the total interest paid from the ledger information
+Action: python_calculator
+Action Input: import pandas as pd; ledger = pd.read_csv('ledger.csv'); total_interest = ledger['Interest_Paid'].sum(); total_interest
+Observation: 1272040
+Thought: I found that the total interest paid is 1,272,040, now I need to provide the final answer
+Action: Final Answer
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Total Interest Paid</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">The total interest paid from the ledger information is <strong>1,272,040</strong>.</p></div></div>
+
+EXAMPLE 4 – Clients with Multiple Loans:
 
 Thought: I need to find clients who have multiple loans by counting their loan occurrences
 Action: python_calculator
@@ -222,17 +242,43 @@ def python_calculator(code: str):
         # Remove any remaining backticks anywhere in the code
         cleaned_code = cleaned_code.replace('```', '').replace('`', '')
         
+        # Remove any markdown-like patterns
+        cleaned_code = re.sub(r'```.*?```', '', cleaned_code, flags=re.DOTALL)
+        cleaned_code = re.sub(r'`.*?`', '', cleaned_code, flags=re.DOTALL)
+        cleaned_code = cleaned_code.replace('```', '').replace('`', '')
+        
         # Log the cleaned code for debugging
         logger.debug(f"Cleaned code: {repr(cleaned_code)}")
         
         # Clean the code by removing newlines and comments, replacing with semicolons
         cleaned_code = cleaned_code.replace('\n', ';').replace('#', ';')
+        
+        # Remove any timestamp patterns that might have been concatenated
+        cleaned_code = re.sub(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}', '', cleaned_code)
+        cleaned_code = re.sub(r'\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[^\]]*\]', '', cleaned_code)
+        
         # Remove empty statements and extra semicolons
         cleaned_code = ';'.join([stmt.strip() for stmt in cleaned_code.split(';') if stmt.strip()])
         
         # Check for common column name mistakes
         if "df['Client']" in cleaned_code:
             return "Error: Use 'Client_Code' instead of 'Client'. The correct column name is 'Client_Code'."
+        
+        # Check if code still contains backticks after cleaning
+        if '`' in cleaned_code or '```' in cleaned_code:
+            logger.warning(f"Backticks still found in cleaned code: {repr(cleaned_code)}")
+            # Remove any remaining backticks
+            cleaned_code = cleaned_code.replace('```', '').replace('`', '')
+        
+        # Ensure the code starts with import
+        if not cleaned_code.startswith('import'):
+            logger.warning(f"Code doesn't start with import: {repr(cleaned_code)}")
+            # Try to find the import statement
+            import_match = re.search(r'import\s+pandas\s+as\s+pd.*', cleaned_code)
+            if import_match:
+                cleaned_code = import_match.group(0)
+            else:
+                return "Error: Code must start with 'import pandas as pd'"
         
         # Execute the cleaned code
         if ';' in cleaned_code:
