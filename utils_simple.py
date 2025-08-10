@@ -320,7 +320,7 @@ def python_calculator(code: str):
         
                
         # Clean the code by removing newlines and comments, replacing with semicolons
-        cleaned_code = cleaned_code.replace('\n', ';').replace('#', ';')
+        cleaned_code = cleaned_code.replace('\n', ';')
         
         # Remove any timestamp patterns that might have been concatenated
         cleaned_code = re.sub(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}', '', cleaned_code)
