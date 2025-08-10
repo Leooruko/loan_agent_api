@@ -102,6 +102,13 @@ Failure to follow this exact format will be considered an invalid response.
 - Use semicolons (;) to separate statements
 - Example: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
 
+🚨 FINAL WARNING: WHEN YOU WRITE "Action Input:", DO THIS 🚨
+1. Write "Action Input: " (with colon and space)
+2. Write ONLY plain Python code without any backticks
+3. Use semicolons (;) to separate statements
+4. Example: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
+5. DO NOT write ```python or ``` anywhere
+
 CSV DATA SOURCES – Use only these CSVs and their exact column names:
 
 IMPORTANT: For most queries, use ONLY processed_data.csv as it contains all the necessary information already merged and processed.
@@ -185,6 +192,8 @@ len(df)
 EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
     <p style="...">No records found for the requested query.</p>
+
+🚨 EXAMPLES - NOTICE: NO BACKTICKS IN ANY ACTION INPUT BELOW 🚨
 
 EXAMPLE 1 – Top Performing Manager:
 
@@ -357,7 +366,7 @@ def python_calculator(code: str):
             if lines:
                 # Modify the last line to capture its result
                 last_line = lines[-1]
-                if not last_line.startswith('import') and not last_line.startswith('df ='):
+                if not last_line.startswith('import') and not last_line.startswith('df =') and not last_line.startswith('ledger ='):
                     # Capture the result of the last statement
                     modified_code = ';'.join(lines[:-1]) + ';__result__ = ' + last_line
                 else:
