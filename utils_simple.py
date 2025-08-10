@@ -315,22 +315,33 @@ def python_calculator(code: str):
             else:
                 return "Error: Code must start with 'import pandas as pd'"
         
-        # Execute the cleaned code
+        # Execute the cleaned code and capture the result
         if ';' in cleaned_code:
-            # Use exec for multi-line code
-            exec(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
-            # Get the last result (assuming the last statement is the result)
-            lines = cleaned_code.split(';')
-            last_line = lines[-1].strip()
-            if last_line:
-                result = eval(last_line, {"__builtins__": __builtins__}, local_namespace)
+            # Add a result capture mechanism
+            lines = [line.strip() for line in cleaned_code.split(';') if line.strip()]
+            if lines:
+                # Modify the last line to capture its result
+                last_line = lines[-1]
+                if not last_line.startswith('import') and not last_line.startswith('df ='):
+                    # Capture the result of the last statement
+                    modified_code = ';'.join(lines[:-1]) + ';__result__ = ' + last_line
+                else:
+                    modified_code = cleaned_code
+                    __result__ = "Code executed successfully"
             else:
-                # If no clear result, return the last non-empty line
-                for line in reversed(lines):
-                    line = line.strip()
-                    if line:
-                        result = eval(line, {"__builtins__": __builtins__}, local_namespace)
-                        break
+                modified_code = cleaned_code
+                __result__ = "No valid code found"
+            
+            # Execute the modified code
+            exec(modified_code, {"__builtins__": __builtins__}, local_namespace)
+            
+            # Get the result
+            if '__result__' in local_namespace:
+                result = local_namespace['__result__']
+            elif 'df' in local_namespace:
+                result = f"DataFrame loaded with {len(local_namespace['df'])} rows"
+            else:
+                result = "Code executed successfully"
         else:
             # Use eval for single expressions
             result = eval(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
