@@ -48,6 +48,8 @@ OUTPUT FORMAT (must follow exactly in this order):
 CRITICAL: You MUST include the Observation step after using python_calculator tool.
 CRITICAL: You MUST complete the entire format - do not stop halfway through.
 CRITICAL: The Action Input must contain complete, valid Python code WITHOUT any backticks or markdown formatting.
+CRITICAL: NEVER use ```python or ``` in Action Input - write the code directly.
+CRITICAL: NEVER use markdown formatting in Action Input - only plain Python code.
 Failure to follow this exact format will be considered an invalid response.
 
 CSV DATA SOURCES – Use only these CSVs and their exact column names:
@@ -82,8 +84,10 @@ RULES:
 - DO NOT load multiple CSV files unless absolutely necessary.
 - DO NOT use backticks in the Action Input.
 - NEVER wrap Python code in ```python or ``` in Action Input - write the code directly.
+- NEVER use markdown formatting in Action Input - only plain Python code.
 - ONLY use the python_calculator tool - no other tools exist.
 - NEVER try to use "python_calculator (continued)" or similar variations.
+- NEVER use ``` or ` in Action Input - only plain Python code.
 
 HTML REQUIREMENTS:
 - Wrap output in <div class="response-container">...</div>
@@ -111,6 +115,8 @@ PYTHON CODING GUIDELINES:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); best_client = df.groupby('Client_Code')['Total_Paid'].sum().sort_values(ascending=False).head(1); client_code = best_client.index[0]; client_code
 - Example of popular products (get counts AND sorted results):
     import pandas as pd; df = pd.read_csv('processed_data.csv'); product_counts = df['Loan_Product_Type'].value_counts(); sorted_products = product_counts.sort_values(ascending=False); top_3 = sorted_products.head(3); top_3.to_dict()
+- Example of managers with most clients:
+    import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); top_managers.to_dict()
 
 EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
@@ -126,7 +132,17 @@ Thought: I have the manager name, now I need to provide the final answer
 Action: Final Answer
 Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>GREENCOM\JOSEPH.MUTUNGA</strong> is our leading performer with the highest total payments.</p></div></div>
 
-EXAMPLE 2 – Most Popular Loan Products:
+EXAMPLE 2 – Managers with Most Clients:
+
+Thought: I need to find the loan managers with the most clients by counting unique clients per manager
+Action: python_calculator
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); top_managers.to_dict()
+Observation: {'GREENCOM\\JOSEPH.MUTUNGA': 25, 'GREENCOM\\SARAH.KIMANI': 18, 'GREENCOM\\DAVID.OTIENO': 12}
+Thought: I have the top 3 managers with their client counts, now I need to provide the final answer
+Action: Final Answer
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Loan Managers with Most Clients</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our top 3 loan managers with the most clients are: <strong>GREENCOM\JOSEPH.MUTUNGA (25 clients)</strong>, <strong>GREENCOM\SARAH.KIMANI (18 clients)</strong>, and <strong>GREENCOM\DAVID.OTIENO (12 clients)</strong>.</p></div></div>
+
+EXAMPLE 3 – Most Popular Loan Products:
 
 Thought: I need to find the most popular loan products by counting occurrences and sorting them
 Action: python_calculator
@@ -183,6 +199,9 @@ def python_calculator(code: str):
         # Clean the code by removing markdown formatting and backticks
         cleaned_code = code.strip()
         
+        # Log the original input for debugging
+        logger.debug(f"Original code input: {repr(code)}")
+        
         # Remove markdown code blocks (```python ... ```)
         if cleaned_code.startswith('```'):
             # Find the first and last backticks
@@ -199,6 +218,12 @@ def python_calculator(code: str):
         
         # Remove any remaining backticks at the beginning or end
         cleaned_code = cleaned_code.strip('`')
+        
+        # Remove any remaining backticks anywhere in the code
+        cleaned_code = cleaned_code.replace('```', '').replace('`', '')
+        
+        # Log the cleaned code for debugging
+        logger.debug(f"Cleaned code: {repr(cleaned_code)}")
         
         # Clean the code by removing newlines and comments, replacing with semicolons
         cleaned_code = cleaned_code.replace('\n', ';').replace('#', ';')
