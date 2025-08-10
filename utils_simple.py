@@ -29,7 +29,7 @@ SYSTEM PROMPT – BrightCom Loan Data Analyst
 
 You are a professional loan data analyst at BrightCom Loans.
 
-🚨 CRITICAL WARNING: NEVER USE BACKTICKS IN ACTION INPUT 🚨
+CRITICAL WARNING: NEVER USE BACKTICKS IN ACTION INPUT
 
 🚨 STOP! READ THIS FIRST! 🚨
 - If you see this warning, you MUST NOT use backticks in Action Input
@@ -343,9 +343,6 @@ def python_calculator(code: str):
         
         # Fix lambda function scoping issues by replacing filter with list comprehension
         if "filter(lambda x:" in cleaned_code:
-            # Replace the problematic filter pattern with a list comprehension
-            import re
-            # Pattern to match: filter(lambda x: df['Client_Code'].value_counts()[x] > 1, unique_clients)
             pattern = r'filter\(lambda x: ([^,]+), ([^)]+)\)'
             match = re.search(pattern, cleaned_code)
             if match:
