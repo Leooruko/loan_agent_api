@@ -365,11 +365,12 @@ def python_calculator(code: str):
                 return "Error: Code must start with 'import pandas as pd'"
         
         # Execute the cleaned code and capture the result
+        local_namespace["__builtins__"] = __builtins__
         if ';' in cleaned_code:
-           result = exec(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
+           result = exec(cleaned_code, local_namespace, local_namespace)
         else:
             # Use eval for single expressions
-            result = eval(cleaned_code, {"__builtins__": __builtins__}, local_namespace)
+            result = eval(cleaned_code, local_namespace, local_namespace)
         
         return str(result)
         
