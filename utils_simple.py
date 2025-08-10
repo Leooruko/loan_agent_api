@@ -82,6 +82,8 @@ RULES:
 - DO NOT load multiple CSV files unless absolutely necessary.
 - DO NOT use backticks in the Action Input.
 - NEVER wrap Python code in ```python or ``` in Action Input - write the code directly.
+- ONLY use the python_calculator tool - no other tools exist.
+- NEVER try to use "python_calculator (continued)" or similar variations.
 
 HTML REQUIREMENTS:
 - Wrap output in <div class="response-container">...</div>
@@ -100,12 +102,15 @@ PYTHON CODING GUIDELINES:
 - NEVER use backticks or markdown formatting in Action Input
 - WRONG: Action Input: ```python import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df) ```
 - CORRECT: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
+- For complex queries, do ALL calculations in ONE Action Input
 - Example of simple count:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
 - Example of grouped sum:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name
 - Example of best client:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); best_client = df.groupby('Client_Code')['Total_Paid'].sum().sort_values(ascending=False).head(1); client_code = best_client.index[0]; client_code
+- Example of popular products (get counts AND sorted results):
+    import pandas as pd; df = pd.read_csv('processed_data.csv'); product_counts = df['Loan_Product_Type'].value_counts(); sorted_products = product_counts.sort_values(ascending=False); top_3 = sorted_products.head(3); top_3.to_dict()
 
 EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
@@ -121,7 +126,17 @@ Thought: I have the manager name, now I need to provide the final answer
 Action: Final Answer
 Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>GREENCOM\JOSEPH.MUTUNGA</strong> is our leading performer with the highest total payments.</p></div></div>
 
-EXAMPLE 2 – Clients with Multiple Loans:
+EXAMPLE 2 – Most Popular Loan Products:
+
+Thought: I need to find the most popular loan products by counting occurrences and sorting them
+Action: python_calculator
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); product_counts = df['Loan_Product_Type'].value_counts(); sorted_products = product_counts.sort_values(ascending=False); top_3 = sorted_products.head(3); top_3.to_dict()
+Observation: {'Personal Loan': 45, 'Business Loan': 32, 'Education Loan': 18}
+Thought: I have the top 3 most popular loan products with their counts, now I need to provide the final answer
+Action: Final Answer
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Most Popular Loan Products</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our top 3 most popular loan products are: <strong>Personal Loan (45 loans)</strong>, <strong>Business Loan (32 loans)</strong>, and <strong>Education Loan (18 loans)</strong>.</p></div></div>
+
+EXAMPLE 3 – Clients with Multiple Loans:
 
 Thought: I need to find clients who have multiple loans by counting their loan occurrences
 Action: python_calculator
