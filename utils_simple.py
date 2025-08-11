@@ -96,7 +96,7 @@ DATA SOURCES AND RELATIONSHIPS
   a. Managed_By(the name of the manager of the loan), 
   b. Loan_No(unique id for a loan), 
   c. Loan_Product_Type(BIASHARA4W, BIASHARA6W, INUKA6WKS),
-  d. Client_Code(unique id for a client),
+  d. Client_Code(unique id for a client.Use Client_Name to answer questions about the client),
   e. Client_Name(the name of the client of the loan),
   f. Issued_Date(the date the loan was issued),
   g. Amount_Disbursed(loan amount),
@@ -134,7 +134,7 @@ DATA SOURCES AND RELATIONSHIPS
   e. Principle_Paid(the amount of principle paid),
   f. Total_Paid(the total amount paid)
 - clients.csv: 1 row per client (Client_Code). Columns:
-  a. Client_Code(Unique id for a client),
+  a. Client_Code(Unique id for a client.Use Name to answer questions about the client),
   b. Name(Client's name),
   c. Gender(Client's gender),
   d. Age(Client's age)
