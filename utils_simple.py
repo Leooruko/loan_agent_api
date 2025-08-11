@@ -59,6 +59,10 @@ CRITICAL: You MUST include the Observation step after using python_calculator to
 CRITICAL: You MUST complete the entire format - do not stop halfway through.
 CRITICAL: Do NOT write "Action: Final Answer" or "Action Input" for the final output. Finish with "Final Answer:" only, then stop.
 
+FINAL ANSWER RULES:
+- The Final Answer must contain concrete values only. Do NOT include code, variable names, or placeholders like {popular_products.index[0]}.
+- Use the Observation values directly in the Final Answer.
+
 🚨 EXAMPLES OF WHAT NOT TO DO IN ACTION INPUT 🚨
 ❌ WRONG: Action Input: ```python
 import pandas as pd
@@ -107,11 +111,13 @@ PYTHON CODING GUIDELINES (concise):
   - Grouped top manager:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1).to_dict()
   - Popular products:
-    import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Loan_Product_Type'].value_counts().head(3).to_dict()
+    import pandas as pd, json; df = pd.read_csv('processed_data.csv'); s = df['Loan_Product_Type'].value_counts().head(3); print(json.dumps(s.to_dict(), ensure_ascii=False))
   - Highest arrears:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Arrears'].abs().sort_values(ascending=False).head(5).to_dict()
   - With ledger (only if needed):
     import pandas as pd; df = pd.read_csv('processed_data.csv'); lg = pd.read_csv('ledger.csv'); lg.groupby('Loan_No')['Total_Paid'].sum().head(5).to_dict()
+
+Important output tip: When your result is a pandas Series/DataFrame, convert it to a compact JSON dict or list and print it, e.g. print(json.dumps(series.to_dict(), ensure_ascii=False)). Avoid printing raw pandas objects.
 
 EDGE CASE HANDLING:
 If no results are found, the Final Answer should be:
@@ -268,10 +274,52 @@ def python_calculator(code: str):
 
         # Prefer anything explicitly printed by the code
         if printed_output:
+            # If the printed output looks like a pandas Series/DataFrame default print,
+            # try to also compute a JSON representation when possible for more reliable downstream use
+            try:
+                import json as _json_internal
+                # Heuristic: if code contains "value_counts" or "groupby" and printed output has multiple lines,
+                # attempt to locate the last assigned variable and convert to dict
+                if ('value_counts(' in cleaned_code or 'groupby(' in cleaned_code) and ('\n' in printed_output):
+                    # Try to identify the last assigned variable name
+                    assignments = [s for s in cleaned_code.split(';') if '=' in s]
+                    if assignments:
+                        last_lhs = assignments[-1].split('=')[0].strip()
+                        if last_lhs and last_lhs.isidentifier() and last_lhs in local_namespace:
+                            obj = local_namespace[last_lhs]
+                            to_dict = None
+                            if hasattr(obj, 'to_dict'):
+                                to_dict = obj.to_dict()
+                            elif hasattr(obj, 'to_json'):
+                                return str(getattr(obj, 'to_json')())
+                            if to_dict is not None:
+                                return _json_internal.dumps(to_dict, ensure_ascii=False)
+            except Exception:
+                # If any heuristic fails, fall back to raw printed output
+                pass
             return printed_output
 
-        # If nothing was printed, but eval returned a value, use it
+        # If nothing was printed, but eval returned a value, format it
         if result_value is not None:
+            try:
+                import json as _json_internal
+                import numpy as _np_internal
+                # Normalize common structures to JSON for easier downstream parsing
+                if isinstance(result_value, (dict, list, tuple)):
+                    return _json_internal.dumps(result_value, ensure_ascii=False)
+                # pandas objects
+                if 'pd' in local_namespace:
+                    _pd_internal = local_namespace['pd']
+                    if isinstance(result_value, _pd_internal.Series):
+                        return _json_internal.dumps(result_value.to_dict(), ensure_ascii=False)
+                    if isinstance(result_value, _pd_internal.DataFrame):
+                        # Default to records for compactness
+                        return _json_internal.dumps(result_value.to_dict(orient='records'), ensure_ascii=False)
+                # numpy scalars
+                if isinstance(result_value, (_np_internal.generic,)):
+                    return _json_internal.dumps(result_value.item(), ensure_ascii=False)
+            except Exception:
+                pass
             return str(result_value)
 
         # Fallback: try to evaluate the last statement as an expression
