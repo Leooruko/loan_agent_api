@@ -294,15 +294,15 @@ def python_calculator(code: str):
                 logger.info("Fixed lambda function scoping issue by replacing filter with list comprehension")
 
         
-        # Ensure the code starts with import
-        if not cleaned_code.startswith('import'):
-            logger.warning(f"Code doesn't start with import: {repr(cleaned_code)}")
-            # Try to find the import statement
-            import_match = re.search(r'import\s+pandas\s+as\s+pd.*', cleaned_code)
-            if import_match:
-                cleaned_code = import_match.group(0)
-            else:
-                return "Error: Code must start with 'import pandas as pd'"
+        # # Ensure the code starts with import
+        # if not cleaned_code.startswith('import'):
+        #     logger.warning(f"Code doesn't start with import: {repr(cleaned_code)}")
+        #     # Try to find the import statement
+        #     import_match = re.search(r'import\s+pandas\s+as\s+pd.*', cleaned_code)
+        #     if import_match:
+        #         cleaned_code = import_match.group(0)
+        #     else:
+        #         return "Error: Code must start with 'import pandas as pd'"
         
         # Execute the cleaned code and capture the result
         local_namespace["__builtins__"] = __builtins__
