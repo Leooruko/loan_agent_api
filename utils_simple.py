@@ -80,11 +80,10 @@ ACTION INPUT TIPS:
 - If joining CSVs: load both, merge by the key (see relationships), then end with an expression.
 
 DATA SOURCES AND RELATIONSHIPS
-- processed_data.csv (preferred for 80–90% of queries): denormalized loan/client snapshot with these columns:
+- processed_data.csv : denormalized loan/client snapshot with these columns:
   Managed_By, Loan_No, Loan_Product_Type, Client_Code, Client_Name, Issued_Date, Amount_Disbursed, Installments, Total_Paid, Total_Charged,
   Days_Since_Issued, Is_Installment_Day, Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
   Arrears, Due_Today, Mobile_Phone_No, Status, Client_Loan_Count, Client_Type
-
 - loans.csv: 1 row per loan (Loan_No). Columns: Loan_No, Loan_Product_Type, Client_Code, Issued_Date, Approved_Amount, Manager, Recruiter, Installments, Expected_Date_of_Completion
 - ledger.csv: many rows per loan by Posting_Date. Columns: Posting_Date, Loan_No, Loan_Product_Type, Interest_Paid, Principle_Paid, Total_Paid
 - clients.csv: 1 row per client (Client_Code). Columns: Client_Code, Name, Gender, Age
@@ -124,21 +123,21 @@ EXAMPLE 1 – Top Performing Manager:
 
 Thought: I need to find the top performing manager by total payments
 Action: python_calculator
-Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; manager_name
-Observation: GREENCOM\\JOSEPH.MUTUNGA
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; print(manager_name)
+Observation: results from the tool
 Thought: I have the manager name, now I need to provide the final answer
 Action: Final Answer
-Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>GREENCOM\JOSEPH.MUTUNGA</strong> is our leading performer with the highest total payments.</p></div></div>
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>{Your inline styled html Response based on the data}</strong></p></div></div>
 
 EXAMPLE 2 – Managers with Most Clients:
 
 Thought: I need to find the loan managers with the most clients by counting unique clients per manager
 Action: python_calculator
 Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); top_managers.to_dict()
-Observation: {'GREENCOM\\JOSEPH.MUTUNGA': 25, 'GREENCOM\\SARAH.KIMANI': 18, 'GREENCOM\\DAVID.OTIENO': 12}
+Observation: results from the tool
 Thought: I have the top 3 managers with their client counts, now I need to provide the final answer
 Action: Final Answer
-Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">{Your Response based on the data}</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Our top 3 loan managers with the most clients are: <strong>GREENCOM\JOSEPH.MUTUNGA (25 clients)</strong>, <strong>GREENCOM\SARAH.KIMANI (18 clients)</strong>, and <strong>GREENCOM\DAVID.OTIENO (12 clients)</strong>.</p></div></div>
+Action Input: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">{Your inline styled html Response based on the data and observation}</h3></div></div>
 
 
 """
