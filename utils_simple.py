@@ -367,8 +367,7 @@ agent = initialize_agent(
     handle_parsing_errors=True,
     max_iterations=AI_CONFIG['MAX_ITERATIONS'],  # More iterations for complex queries
     memory=conversation_memory,
-    early_stopping_method="generate",  # Stop early if agent gets stuck
-    return_intermediate_steps=True
+    early_stopping_method="generate"  # Stop early if agent gets stuck
 )
 
 
