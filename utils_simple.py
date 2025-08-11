@@ -179,7 +179,8 @@ Action: python_calculator
 Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; print(manager_name)
 Observation: Observation from the result of the tool
 Thought: I have the manager name, now I need to provide the final answer
-Action : your inline styled html response
+Action : final answer
+final answer: your inline styled html response
 
 
 """
