@@ -32,8 +32,10 @@ async def test_agent_memory(agent_name: str, agent):
     clear_conversation_memory()
 
     turns = [
-        "Note for this session: FAVORITE_CODE=ZX-42. Acknowledge only.",
-        "What is FAVORITE_CODE I just told you? Answer with the code only.",
+        "Who is the top performing manager?",
+        "How many clients does he manage?",
+        "How many loans does he manage?",
+        "How many loans does he manage?",
     ]
 
     outputs = await run_turns(agent, turns)
