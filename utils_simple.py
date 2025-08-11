@@ -138,36 +138,9 @@ EXAMPLE 1 – Top Performing Manager:
 Thought: I need to find the top performing manager by total payments
 Action: python_calculator
 Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_manager = df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1); manager_name = top_manager.index[0]; print(manager_name)
-Observation: Joseph Mutunga
+Observation: Observation from the result of the tool
 Thought: I have the manager name, now I need to provide the final answer
-Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;"><strong>Joseph Mutunga</strong></p></div></div>
-
-EXAMPLE 2 – Managers with Most Clients:
-
-Thought: I need to find the loan managers with the most clients by counting unique clients per manager
-Action: python_calculator
-Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); print(top_managers.to_dict())
-Observation: {"Mgr A": 30, "Mgr B": 28, "Mgr C": 22}
-Thought: I have the top 3 managers with their client counts, now I need to provide the final answer
-Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Managers with Most Clients</h3><ul style="list-style-type:none; padding:0; margin:0; line-height:1.6; font-size:1rem;"><li><strong>Mgr A:</strong> 30</li><li><strong>Mgr B:</strong> 28</li><li><strong>Mgr C:</strong> 22</li></ul></div></div>
-
-EXAMPLE 3 – Popular Products (JSON Observation):
-
-Thought: I need the top 3 most popular loan products.
-Action: python_calculator
-Action Input: import pandas as pd, json; df = pd.read_csv('processed_data.csv'); s = df['Loan_Product_Type'].value_counts().head(3); print(json.dumps(s.to_dict(), ensure_ascii=False))
-Observation: {"BIASHARA4W": 208, "BIASHARA6W": 206, "INUKA6WKS": 175}
-Thought: I have the product counts and can present them in HTML with concrete values.
-Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top 3 Most Popular Loan Products</h3><ul style="list-style-type:none; padding:0; margin:0; line-height:1.6; font-size:1rem;"><li><strong>BIASHARA4W:</strong> 208 loans</li><li><strong>BIASHARA6W:</strong> 206 loans</li><li><strong>INUKA6WKS:</strong> 175 loans</li></ul></div></div>
-
-EXAMPLE 4 – Clients with Arrears:
-
-Thought: I need to list client codes where arrears are positive.
-Action: python_calculator
-Action Input: import pandas as pd, json; df = pd.read_csv('processed_data.csv'); clients = df[df['Arrears'] > 0]['Client_Code'].dropna().astype(str).unique().tolist(); print(json.dumps(clients, ensure_ascii=False))
-Observation: ["C00540", "C01760", "C01460"]
-Thought: I have the list of client codes with arrears; now I will present them clearly in HTML.
-Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin:0 0 10px 0; font-size:1.3rem; font-weight:700;">Clients With Arrears</h3><p style="margin:0 0 8px 0;">Total: 3</p><ul style="list-style-type:none; padding:0; margin:0; line-height:1.6; font-size:1rem;"><li>C00540</li><li>C01760</li><li>C01460</li></ul></div></div>
+Final Answer: Your inline styled html response
 
 
 """
