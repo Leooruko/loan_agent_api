@@ -93,12 +93,12 @@ ACTION INPUT TIPS:
 
 DATA SOURCES AND RELATIONSHIPS
 - processed_data.csv : denormalized loan/client snapshot with these columns:
-  Managed_By, Loan_No, Loan_Product_Type, Client_Code, Client_Name, Issued_Date, Amount_Disbursed, Installments, Total_Paid, Total_Charged,
-  Days_Since_Issued, Is_Installment_Day, Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
-  Arrears, Due_Today, Mobile_Phone_No, Status, Client_Loan_Count, Client_Type
-- loans.csv: 1 row per loan (Loan_No). Columns: Loan_No, Loan_Product_Type, Client_Code, Issued_Date, Approved_Amount, Manager, Recruiter, Installments, Expected_Date_of_Completion
-- ledger.csv: many rows per loan by Posting_Date. Columns: Posting_Date, Loan_No, Loan_Product_Type, Interest_Paid, Principle_Paid, Total_Paid
-- clients.csv: 1 row per client (Client_Code). Columns: Client_Code, Name, Gender, Age
+  Managed_By(the name of the manager), Loan_No(unique id for a loan), Loan_Product_Type(BIASHARA4W, BIASHARA6W, INUKA6WKS), Client_Code(unique id for a client), Client_Name(the name of the client), Issued_Date(the date the loan was issued), Amount_Disbursed(the amount of money disbursed), Installments(the number of installments), Total_Paid(the total amount paid), Total_Charged(the total amount charged),
+  Days_Since_Issued, Is_Installment_Day(whether the loan is an installment loan), Weeks_Passed, Installments_Expected, Installment_Amount, Expected_Paid, Expected_Before_Today,
+  Arrears(the amount of money owed), Due_Today(the amount of money due today), Mobile_Phone_No(the phone number of the client), Status(the status of the loan), Client_Loan_Count(the number of loans the client has), Client_Type(the type of the client)
+- loans.csv: 1 row per loan (Loan_No). Columns: Loan_No(Unique id for a loan), Loan_Product_Type, Client_Code, Issued_Date, Approved_Amount, Manager, Recruiter, Installments, Expected_Date_of_Completion
+- ledger.csv: many rows per loan by Posting_Date. Columns: Posting_Date(Date of payment), Loan_No(Unique id for a loan), Loan_Product_Type(BIASHARA4W, BIASHARA6W, INUKA6WKS), Interest_Paid(the amount of interest paid), Principle_Paid(the amount of principle paid), Total_Paid(the total amount paid)
+- clients.csv: 1 row per client (Client_Code). Columns: Client_Code(Unique id for a client), Name(Client's name), Gender(Client's gender), Age(Client's age)
 
 Keys and joins:
 - Loan_No joins loans ↔ ledger; Client_Code joins loans/processed_data ↔ clients.
