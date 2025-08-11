@@ -603,7 +603,7 @@
         messageDiv.classList.add('loading');
       } else if (type === 'bot' && content.includes('<')) {
         // Render HTML content for bot messages
-        messageContent.innerHTML = `<div class="response-container">${content}</div>`;
+        messageContent.innerHTML = content;
       } else {
         messageContent.textContent = content;
       }
