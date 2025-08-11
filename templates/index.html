@@ -605,7 +605,7 @@
         // Render HTML content for bot messages
         messageContent.innerHTML = `<div class="response-container">${content}</div>`;
       } else {
-        messageContent.textContent = `<div class="response-container">${content}</div>`;
+        messageContent.textContent = content;
       }
       
       messageDiv.appendChild(avatar);
