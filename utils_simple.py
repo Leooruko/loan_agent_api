@@ -60,7 +60,7 @@ CRITICAL: You MUST complete the entire format - do not stop halfway through.
 CRITICAL: Do NOT write "Action: Final Answer" or "Action Input" for the final output. Finish with "Final Answer:" only, then stop.
 
 FINAL ANSWER RULES:
-- The Final Answer must contain concrete values only. Do NOT include code, variable names, or placeholders like {popular_products.index[0]}.
+- The Final Answer must contain concrete values only.
 - Use the Observation values directly in the Final Answer.
 
 🚨 EXAMPLES OF WHAT NOT TO DO IN ACTION INPUT 🚨
