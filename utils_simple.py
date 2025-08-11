@@ -181,6 +181,14 @@ Observation: Observation from the result of the tool
 Thought: I have the manager name, now I need to provide the final answer
 final answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top Performing Manager</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Your inline styled response and explanation</p></div></div>
 
+EXAMPLE 2 – Popular Products:
+
+Thought: I need to find the top 3 most popular loan products
+Action: python_calculator
+Action Input: import pandas as pd, json; df = pd.read_csv('processed_data.csv'); s = df['Loan_Product_Type'].value_counts().head(3); print(json.dumps(s.to_dict(), ensure_ascii=False))
+Observation: Observation from the result of the tool
+Thought: I have the product counts and can present them in HTML with concrete values.
+Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top 3 Most Popular Loan Products</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Your inline styled response and explanation</p></div></div>
 
 """
 
