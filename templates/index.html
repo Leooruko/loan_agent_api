@@ -603,9 +603,9 @@
         messageDiv.classList.add('loading');
       } else if (type === 'bot' && content.includes('<')) {
         // Render HTML content for bot messages
-        messageContent.innerHTML = content;
+        messageContent.innerHTML = `<div class="response-container">${content}</div>`;
       } else {
-        messageContent.textContent = content;
+        messageContent.textContent = `<div class="response-container">${content}</div>`;
       }
       
       messageDiv.appendChild(avatar);
