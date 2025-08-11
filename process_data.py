@@ -4,6 +4,7 @@ import requests
 import csv
 from datetime import datetime
 import pandas as pd
+import re
 
 headers = {
         "Authorization": "Token 58ffed2a92962674bdc906707bc9af2823d0120d"
@@ -17,6 +18,15 @@ responseDict = {
     "clients": "https://brightcomloans.loca.lt/loans/api/admin/clients/",
     "ledger": "https://brightcomloans.loca.lt/loans/api/admin/ledger/"
 }
+
+def normalize_manager(s: str) -> str:
+    if not isinstance(s, str) or not s:
+        return ""
+    raw = s.split("\\")[-1]                           # after last backslash
+    raw = re.sub(r'[^\w.\-]+$', '', raw.strip())      # strip trailing punctuation (e.g., comma)
+    parts = re.split(r'[._\s]+', raw)                 # split on dot/underscore/whitespace
+    parts = [p for p in parts if p]                   # drop empties
+    return " ".join(p.capitalize() for p in parts)
 
 # Fetch data
 for key, url in responseDict.items():
@@ -40,6 +50,7 @@ for key, url in responseDict.items():
         df = pd.DataFrame(data)
         try:
            df.rename(columns={'Total Paid': 'Total_Paid', 'Total Charged': 'Total_Charged'}, inplace=True)
+           df['Managed_By'] = df['Managed_By'].apply(normalize_manager)
         except KeyError as e:
             print(f"KeyError: {e} - This column may not exist in the data.")
         df.to_csv(file_path, index=False)
