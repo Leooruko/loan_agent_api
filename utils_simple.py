@@ -133,7 +133,7 @@ EXAMPLE 2 – Managers with Most Clients:
 
 Thought: I need to find the loan managers with the most clients by counting unique clients per manager
 Action: python_calculator
-Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); top_managers.to_dict()
+Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); top_managers = df.groupby('Managed_By')['Client_Code'].nunique().sort_values(ascending=False).head(3); print(top_managers.to_dict())
 Observation: results from the tool
 Thought: I have the top 3 managers with their client counts, now I need to provide the final answer
 Action: Final Answer
