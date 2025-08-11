@@ -367,7 +367,8 @@ agent = initialize_agent(
     handle_parsing_errors=True,
     max_iterations=AI_CONFIG['MAX_ITERATIONS'],  # More iterations for complex queries
     memory=conversation_memory,
-    early_stopping_method="generate"  # Stop early if agent gets stuck
+    early_stopping_method="generate",  # Stop early if agent gets stuck
+    return_intermediate_steps=True
 )
 
 
@@ -382,6 +383,7 @@ async def promt_llm(query, conversation_history=None):
         try:
             response = agent.invoke({"input": query})
             result = response.get("output", "No response generated")
+            intermediate = response.get("intermediate_steps")
         except Exception as agent_error:
             # Handle agent parsing errors specifically
             if "Could not parse LLM output" in str(agent_error):
@@ -392,6 +394,49 @@ async def promt_llm(query, conversation_history=None):
                 return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">System Error</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I encountered a system error. Please try again or contact support if the issue persists.</p></div></div>'
         
         if isinstance(result, str):
+            # If the final HTML contains placeholders and we have intermediate tool output,
+            # attempt to patch the HTML using the latest Observation JSON, if present.
+            def extract_latest_json_from_steps(steps):
+                try:
+                    if not steps:
+                        return None
+                    # steps is typically a list of (AgentAction, observation)
+                    for action, obs in reversed(steps):
+                        # prefer JSON-shaped observations
+                        if isinstance(obs, str) and obs.strip().startswith('{') and obs.strip().endswith('}'):
+                            import json
+                            return json.loads(obs)
+                except Exception:
+                    return None
+                return None
+
+            placeholder_patterns = [
+                r"\{[^}]*Number of occurrences[^}]*\}",
+                r"\{popular_products[^}]*\}",
+                r"\{[^}]+\}"
+            ]
+
+            has_placeholder = any(re.search(p, result) for p in placeholder_patterns)
+            if has_placeholder:
+                try:
+                    obs_json = extract_latest_json_from_steps(intermediate)
+                    if isinstance(obs_json, dict) and obs_json:
+                        # Sort by value desc
+                        top_items = sorted(obs_json.items(), key=lambda kv: kv[1], reverse=True)[:3]
+                        # Build safe HTML list items
+                        li_items = "".join([f"<li><strong>{name}:</strong> {count} loans</li>" for name, count in top_items])
+                        rebuilt_html = (
+                            '<div class="response-container">'
+                            '<div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;">'
+                            '<h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top 3 Most Popular Loan Products</h3>'
+                            f'<ul style="list-style-type: none; margin: 0; padding: 0;">{li_items}</ul>'
+                            '</div>'
+                            '</div>'
+                        )
+                        result = rebuilt_html
+                except Exception:
+                    # If auto-repair fails, keep original handling below
+                    pass
             # Check if response is incomplete (missing Final Answer)
             if "Action Input:" in result and "Final Answer:" not in result:
                 logger.warning(f"Incomplete response detected: {result[:200]}...")
