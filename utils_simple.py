@@ -228,42 +228,47 @@ def python_calculator(code: str):
         # Clean the code by removing markdown formatting and backticks
         cleaned_code = code.strip()
         
-              
+        # Prefer the content after 'Action Input:' if present
+        if 'Action Input:' in cleaned_code:
+            cleaned_code = cleaned_code.split('Action Input:', 1)[1].strip()
+        
         # Remove markdown code blocks (```python ... ```)
         if cleaned_code.startswith('```'):
-            # Find the first and last backticks
             first_backticks = cleaned_code.find('```')
             if first_backticks != -1:
-                # Find the end of the first line (language identifier)
                 first_newline = cleaned_code.find('\n', first_backticks)
                 if first_newline != -1:
-                    # Find the closing backticks
                     closing_backticks = cleaned_code.rfind('```')
                     if closing_backticks > first_newline:
-                        # Extract the code between the backticks
                         cleaned_code = cleaned_code[first_newline + 1:closing_backticks].strip()
-        
-        # Remove any remaining backticks at the beginning or end
-        cleaned_code = cleaned_code.strip('`')
         
         # Remove any remaining backticks anywhere in the code
         cleaned_code = cleaned_code.replace('```', '').replace('`', '')
-        
         # Remove any markdown-like patterns
         cleaned_code = re.sub(r'```.*?```', '', cleaned_code, flags=re.DOTALL)
         cleaned_code = re.sub(r'`.*?`', '', cleaned_code, flags=re.DOTALL)
         cleaned_code = cleaned_code.replace('```', '').replace('`', '')
         
-               
-        # Clean the code by removing newlines and comments, replacing with semicolons
-        cleaned_code = cleaned_code.replace('\n', ';')
+        # Strip out Action headers and inline comments, keep only Python
+        processed_lines = []
+        for line in cleaned_code.splitlines():
+            stripped = line.strip()
+            if stripped.startswith('Action:') or stripped.startswith('Action Input:'):
+                continue
+            # remove inline comments (simple split)
+            if '#' in line:
+                line = line.split('#', 1)[0]
+            if line.strip():
+                processed_lines.append(line)
+        cleaned_code = '\n'.join(processed_lines)
         
         # Remove any timestamp patterns that might have been concatenated
         cleaned_code = re.sub(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}', '', cleaned_code)
         cleaned_code = re.sub(r'\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}[^\]]*\]', '', cleaned_code)
         
-        # Remove empty statements and extra semicolons
-        cleaned_code = ';'.join([stmt.strip() for stmt in cleaned_code.split(';') if stmt.strip()])
+        # Remove empty statements lines
+        lines = [ln for ln in cleaned_code.split('\n') if ln.strip()]
+        cleaned_code = '\n'.join(lines)
         
         # Check for common column name mistakes
         if "df['Client']" in cleaned_code:
@@ -284,103 +289,53 @@ def python_calculator(code: str):
             if match:
                 condition = match.group(1)
                 iterable = match.group(2)
-                # Replace with list comprehension
                 replacement = f"[x for x in {iterable} if {condition}]"
                 cleaned_code = re.sub(pattern, replacement, cleaned_code)
                 logger.info("Fixed lambda function scoping issue by replacing filter with list comprehension")
-
         
-        # # Ensure the code starts with import
-        # if not cleaned_code.startswith('import'):
-        #     logger.warning(f"Code doesn't start with import: {repr(cleaned_code)}")
-        #     # Try to find the import statement
-        #     import_match = re.search(r'import\s+pandas\s+as\s+pd.*', cleaned_code)
-        #     if import_match:
-        #         cleaned_code = import_match.group(0)
-        #     else:
-        #         return "Error: Code must start with 'import pandas as pd'"
+        # Ensure the code starts with import
+        if not cleaned_code.lstrip().startswith('import'):
+            logger.warning(f"Code doesn't start with import: {repr(cleaned_code)}")
+            import_match = re.search(r'import\s+pandas\s+as\s+pd.*', cleaned_code)
+            if import_match:
+                cleaned_code = import_match.group(0)
+            else:
+                return "Error: Code must start with 'import pandas as pd'"
         
-        # Execute the cleaned code and capture stdout so printed results become the Observation
+        # Execute the cleaned code and capture the result
         import io
         from contextlib import redirect_stdout
-
         local_namespace["__builtins__"] = __builtins__
-
         stdout_buffer = io.StringIO()
-        result_value = None
+        
+        stmts = [s for s in cleaned_code.split('\n') if s.strip()]
+        if not stmts:
+            return "No code provided"
+        body = '\n'.join(stmts[:-1]) if len(stmts) > 1 else ''
+        last_stmt = stmts[-1]
+        
         with redirect_stdout(stdout_buffer):
-            if ';' in cleaned_code:
-                # Execute the full statement sequence
-                result_value = exec(cleaned_code, local_namespace, local_namespace)
-            else:
-                # Evaluate a single expression (may also print)
-                result_value = eval(cleaned_code, local_namespace, local_namespace)
-
-        printed_output = stdout_buffer.getvalue().strip()
-
-        # Prefer anything explicitly printed by the code
-        if printed_output:
-            # If the printed output looks like a pandas Series/DataFrame default print,
-            # try to also compute a JSON representation when possible for more reliable downstream use
+            if body:
+                exec(body, local_namespace, local_namespace)
+            # Try to evaluate last statement as an expression; if not, exec and fallback
             try:
-                import json as _json_internal
-                # Heuristic: if code contains "value_counts" or "groupby" and printed output has multiple lines,
-                # attempt to locate the last assigned variable and convert to dict
-                if ('value_counts(' in cleaned_code or 'groupby(' in cleaned_code) and ('\n' in printed_output):
-                    # Try to identify the last assigned variable name
-                    assignments = [s for s in cleaned_code.split(';') if '=' in s]
-                    if assignments:
-                        last_lhs = assignments[-1].split('=')[0].strip()
-                        if last_lhs and last_lhs.isidentifier() and last_lhs in local_namespace:
-                            obj = local_namespace[last_lhs]
-                            to_dict = None
-                            if hasattr(obj, 'to_dict'):
-                                to_dict = obj.to_dict()
-                            elif hasattr(obj, 'to_json'):
-                                return str(getattr(obj, 'to_json')())
-                            if to_dict is not None:
-                                return _json_internal.dumps(to_dict, ensure_ascii=False)
-            except Exception:
-                # If any heuristic fails, fall back to raw printed output
-                pass
-            return printed_output
-
-        # If nothing was printed, but eval returned a value, format it
-        if result_value is not None:
-            try:
-                import json as _json_internal
-                import numpy as _np_internal
-                # Normalize common structures to JSON for easier downstream parsing
-                if isinstance(result_value, (dict, list, tuple)):
-                    return _json_internal.dumps(result_value, ensure_ascii=False)
-                # pandas objects
-                if 'pd' in local_namespace:
-                    _pd_internal = local_namespace['pd']
-                    if isinstance(result_value, _pd_internal.Series):
-                        return _json_internal.dumps(result_value.to_dict(), ensure_ascii=False)
-                    if isinstance(result_value, _pd_internal.DataFrame):
-                        # Default to records for compactness
-                        return _json_internal.dumps(result_value.to_dict(orient='records'), ensure_ascii=False)
-                # numpy scalars
-                if isinstance(result_value, (_np_internal.generic,)):
-                    return _json_internal.dumps(result_value.item(), ensure_ascii=False)
-            except Exception:
-                pass
-            return str(result_value)
-
-        # Fallback: try to evaluate the last statement as an expression
-        try:
-            statements = [stmt.strip() for stmt in cleaned_code.split(';') if stmt.strip()]
-            last_stmt = statements[-1] if statements else ''
-            if last_stmt and not last_stmt.startswith('print('):
-                last_value = eval(last_stmt, local_namespace, local_namespace)
-                if last_value is not None:
-                    return str(last_value)
-        except Exception:
-            pass
-
-        # Final fallback when no observable output was produced
-        return ""
+                compile(last_stmt, "<exec>", "eval")
+                result = eval(last_stmt, local_namespace, local_namespace)
+            except SyntaxError:
+                exec(last_stmt, local_namespace, local_namespace)
+                result = (
+                    local_namespace.get("__result__")
+                    or local_namespace.get("final_answer")
+                    or local_namespace.get("result")
+                )
+                if result is None and '=' in last_stmt:
+                    var_name = last_stmt.split('=', 1)[0].strip()
+                    result = local_namespace.get(var_name)
+        
+        if result is None:
+            printed = stdout_buffer.getvalue().strip()
+            result = printed if printed else "Code executed"
+        return str(result)
         
     except SyntaxError as e:
         error_msg = f"Syntax error in Python code: {str(e)}. Please check your code syntax."
