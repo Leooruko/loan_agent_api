@@ -223,6 +223,13 @@ Observation: Observation from the result of the tool
 Thought: I have the product counts and can present them in HTML with concrete values.
 Final Answer: <div class="response-container"><div style="background: linear-gradient(135deg, #82BF45 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(130, 191, 69, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Top 3 Most Popular Loan Products</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">Your inline styled response and explanation</p></div></div>
 
+TERMINOLOGY MAPPING (use these columns/derivations)
+- charges → Total_Charged
+- amount due → Total_Charged - Total_Paid (derive in code)
+- on-time collections → compare Total_Paid vs Expected_Before_Today (cap ratio at 1.0)
+- recent performance → restrict to Weeks_Passed <= 4 and repeat the ratio
+- latest date → sort by Posting_Date descending and use .iloc[0]
+
 """
 
 )
@@ -237,6 +244,8 @@ def python_calculator(code: str):
     - "sum([1, 2, 3, 4, 5])" for basic math
     - "import numpy as np; np.mean([10, 20, 30, 40, 50])" for statistics
     - "import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Total_Paid'].sum()" for data analysis
+    - Clients due today (list of dicts):
+      import pandas as pd; df = pd.read_csv('processed_data.csv'); d = df[df['Due_Today']>0][['Client_Code','Client_Name','Due_Today']].head(50); [{"Client_Code": r['Client_Code'], "Client_Name": r['Client_Name'], "Due_Today": float(r['Due_Today'])} for _, r in d.iterrows()]
     """
     try:
         # Create a safe execution environment with all necessary libraries
@@ -325,6 +334,34 @@ def python_calculator(code: str):
                 replacement = f"[x for x in {iterable} if {condition}]"
                 cleaned_code = re.sub(pattern, replacement, cleaned_code)
                 logger.info("Fixed lambda function scoping issue by replacing filter with list comprehension")
+
+        # Column synonym fixes (user phrasing → actual columns or derived)
+        # 'Charges' → 'Total_Charged'
+        if "df['Charges']" in cleaned_code or 'df["Charges"]' in cleaned_code:
+            cleaned_code = cleaned_code.replace("df['Charges']", "df['Total_Charged']").replace('df["Charges"]', 'df["Total_Charged"]')
+            logger.info("Mapped column synonym 'Charges' → 'Total_Charged'")
+        # 'Amount_Due' → (Total_Charged - Total_Paid)
+        if "df['Amount_Due']" in cleaned_code or 'df["Amount_Due"]' in cleaned_code:
+            cleaned_code = cleaned_code.replace("df['Amount_Due']", "(df['Total_Charged'] - df['Total_Paid'])").replace('df["Amount_Due"]', '(df["Total_Charged"] - df["Total_Paid"])')
+            logger.info("Mapped column synonym 'Amount_Due' → (Total_Charged - Total_Paid)")
+        # 'Is_Due_Today' / 'Is_Installment_Due_Today' → use Due_Today > 0
+        if "['Is_Due_Today']" in cleaned_code or "['Is_Installment_Due_Today']" in cleaned_code or '["Is_Due_Today"]' in cleaned_code or '["Is_Installment_Due_Today"]' in cleaned_code:
+            cleaned_code = cleaned_code.replace("['Is_Due_Today']", "['Due_Today']").replace('["Is_Due_Today"]', '["Due_Today"]').replace("['Is_Installment_Due_Today']", "['Due_Today']").replace('["Is_Installment_Due_Today"]', '["Due_Today"]')
+            # Replace comparisons to True with > 0 for Due_Today
+            cleaned_code = re.sub(r"(\['Due_Today'\]\s*)==\s*True", r"\1> 0", cleaned_code)
+            logger.info("Mapped due-today flag → Due_Today > 0")
+        # 'Client_Id' → 'Client_Code'
+        if "['Client_Id']" in cleaned_code or '["Client_Id"]' in cleaned_code:
+            cleaned_code = cleaned_code.replace("['Client_Id']", "['Client_Code']").replace('["Client_Id"]', '["Client_Code"]')
+            logger.info("Mapped column synonym 'Client_Id' → 'Client_Code'")
+        # 'Loan_Number' → 'Loan_No'
+        if "['Loan_Number']" in cleaned_code or '["Loan_Number"]' in cleaned_code:
+            cleaned_code = cleaned_code.replace("['Loan_Number']", "['Loan_No']").replace('["Loan_Number"]', '["Loan_No"]')
+            logger.info("Mapped column synonym 'Loan_Number' → 'Loan_No'")
+
+        # Normalize single-bracket multi-column selection to double brackets
+        cleaned_code = re.sub(r"\[(\s*'[^']+'\s*(?:,\s*'[^']+'\s*)+)\]", r"[[\1]]", cleaned_code)
+        cleaned_code = re.sub(r"\[(\s*\"[^\"]+\"\s*(?:,\s*\"[^\"]+\"\s*)+)\]", r"[[\1]]", cleaned_code)
         
         # Ensure the code starts with import
         if not cleaned_code.lstrip().startswith('import'):
