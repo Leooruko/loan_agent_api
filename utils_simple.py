@@ -32,9 +32,20 @@ Primary #F25D27, Success #82BF45, Dark #19593B, White #FFFFFF.
 
 CRITICAL WARNING: NEVER USE BACKTICKS IN ACTION INPUT
 
+QUICK RULES (read first):
+- Use the python_calculator tool to run pandas code. Always start with: import pandas as pd; df = pd.read_csv('processed_data.csv')
+- The last line of Action Input must be a single expression that evaluates to the final answer (no assignment/print). Examples: len(df), top_arrears.to_dict()
+- Prefer using only processed_data.csv. Add other CSVs only if a required column is missing (see relationships below).
+- Do all calculations in one Action Input. Keep the code short and deterministic.
+- Return lightweight results (numbers, small dicts/lists). Format HTML only in Final Answer.
+- Final Answer must be self-contained static HTML with actual values. Do NOT use placeholders (e.g., [value], <number-from-observation>) or any template syntax ({{ }}, {% %}).
+- If nothing is found, return an empty result or 0 (then explain in Final Answer).
+
 FORMAT RULES (for Action/Input steps):
 - Action Input: ONE line of Python (no markdown/backticks/newlines). Separate statements with semicolons.
-- Last statement must a print statement on the result of the expression (no assignment) so the tool can return the value.
+- Last statement must be an expression (no assignment/print) so the tool returns the value.
+- Keep code minimal and deterministic.
+- If you need multiple fields for the Final Answer, end with a small dict (e.g., {"count": ..., "name": ...}).
 - Keep code minimal and deterministic.
 - Use only the CSVs provided.
 
@@ -89,7 +100,8 @@ Failure to follow this exact format will be considered an invalid response.
 
 ACTION INPUT TIPS:
 - Example: Action Input: import pandas as pd; df = pd.read_csv('processed_data.csv'); len(df)
-- If joining CSVs: load both, merge by the key (see relationships), then end with an expression.
+- If joining CSVs: load both, merge by the key (see relationships), then end with an expression (number/list/dict).
+- For tables in Final Answer, compute a small dict or list-of-dicts in Action Input and embed concrete values; never output template loops.
 
 DATA SOURCES AND RELATIONSHIPS
 - processed_data.csv : denormalized loan/client snapshot with these columns:
@@ -158,11 +170,11 @@ PYTHON CODING GUIDELINES (concise):
   - Grouped top manager:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); df.groupby('Managed_By')['Total_Paid'].sum().sort_values(ascending=False).head(1).to_dict()
   - Popular products:
-    import pandas as pd, json; df = pd.read_csv('processed_data.csv'); s = df['Loan_Product_Type'].value_counts().head(3); print(json.dumps(s.to_dict(), ensure_ascii=False))
+    import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Loan_Product_Type'].value_counts().head(3).to_dict()
   - Highest arrears:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Arrears'].abs().sort_values(ascending=False).head(5).to_dict()
-  - With ledger (only if needed):
-    import pandas as pd; df = pd.read_csv('processed_data.csv'); lg = pd.read_csv('ledger.csv'); lg.groupby('Loan_No')['Total_Paid'].sum().head(5).to_dict()
+  - Latest transaction (ledger):
+    import pandas as pd; lg = pd.read_csv('ledger.csv'); r = lg.sort_values('Posting_Date', ascending=False).iloc[0]; {"Loan_No": r['Loan_No'], "Loan_Product_Type": r['Loan_Product_Type'], "Interest_Paid": r['Interest_Paid'], "Principle_Paid": r['Principle_Paid'], "Total_Paid": r['Total_Paid'], "Posting_Date": str(r['Posting_Date']).split()[0]}
 
 Important output tip: When your result is a pandas Series/DataFrame, convert it to a compact JSON dict or list and print it, e.g. print(json.dumps(series.to_dict(), ensure_ascii=False)). Avoid printing raw pandas objects.
 
@@ -308,7 +320,9 @@ def python_calculator(code: str):
         local_namespace["__builtins__"] = __builtins__
         stdout_buffer = io.StringIO()
         
-        stmts = [s for s in cleaned_code.split('\n') if s.strip()]
+        # Split code into statements by semicolons or newlines
+        raw_parts = re.split(r'[;\n]', cleaned_code)
+        stmts = [p.strip() for p in raw_parts if p.strip()]
         if not stmts:
             return "No code provided"
         body = '\n'.join(stmts[:-1]) if len(stmts) > 1 else ''
