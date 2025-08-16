@@ -38,6 +38,7 @@ QUICK RULES (read first):
 - Use the python_calculator tool to run pandas code. Always start with: import pandas as pd; df = pd.read_csv('processed_data.csv')
 - The last line of Action Input must be a single expression that evaluates to the final answer (no assignment/print). Examples: len(df), top_arrears.to_dict()
 - Prefer using only processed_data.csv. Add other CSVs only if a required column is missing (see relationships below).
+- For transaction dates/amounts, use ledger.csv. For loan details, use processed_data.csv or loans.csv.
 - Do all calculations in one Action Input. Keep the code short and deterministic.
 - Return lightweight results (numbers, small dicts/lists). Format HTML only in Final Answer.
 - Final Answer must be self-contained static HTML with actual values. Do NOT use placeholders (e.g., [value], <number-from-observation>) or any template syntax ({{ }}, {% %}).
@@ -85,6 +86,8 @@ GLOBAL FORMAT RESTRICTIONS (apply to the entire response):
 FINAL ANSWER RULES:
 - The Final Answer must contain concrete values only.
 - Use the Observation values directly in the Final Answer.
+- NEVER use placeholders like "manager_name", "client_name", "amount" - use actual values from the Observation.
+- NEVER use template syntax like {{ }} or {% %} - embed actual values directly in HTML.
 
 🚨 EXAMPLES OF WHAT NOT TO DO IN ACTION INPUT 🚨
 ❌ WRONG: Action Input: ```python
@@ -255,6 +258,8 @@ def python_calculator(code: str):
       import pandas as pd; lg = pd.read_csv('ledger.csv'); lg[lg['Posting_Date']=='2025-08-11']['Total_Paid'].sum()
     - Manager performance analysis (avoid .fillna() on scalars):
       import pandas as pd; df = pd.read_csv('processed_data.csv'); mgr = 'Joseph Mutunga'; ontime = df[df['Managed_By']==mgr]['Total_Paid'].sum() / df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() if df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() > 0 else 0; {"ontime_ratio": ontime}
+    - Latest loan disbursement (use ledger.csv for transactions):
+      import pandas as pd; df = pd.read_csv('processed_data.csv'); lg = pd.read_csv('ledger.csv'); r = lg.sort_values('Posting_Date', ascending=False).iloc[0]; {"Manager": df[df['Loan_No']==r['Loan_No']]['Managed_By'].iloc[0], "Client": df[df['Loan_No']==r['Loan_No']]['Client_Name'].iloc[0], "Amount": float(r['Total_Paid'])}
     """
     try:
         # Create a safe execution environment with all necessary libraries
@@ -369,6 +374,12 @@ def python_calculator(code: str):
             return f"({numerator} / {denominator}) if {denominator} != 0 else 0"
         
         cleaned_code = re.sub(r'\(([^)]+\.sum\(\))\s*/\s*([^)]+\.sum\(\))\)\.fillna\(0\)', fix_division_fillna, cleaned_code)
+        
+        # Fix JSON serialization issues with numpy types
+        cleaned_code = re.sub(r'json\.dumps\(([^)]+)\)', r'json.dumps(\1, default=str)', cleaned_code)
+        
+        # Fix incorrect data merging (pd.concat with on parameter)
+        cleaned_code = re.sub(r'pd\.concat\(\[([^,]+),\s*([^,]+)\],\s*on=([^,]+)\)', r'pd.merge(\1, \2, on=\3)', cleaned_code)
 
         # Column synonym fixes (user phrasing → actual columns or derived)
         # 'Charges' → 'Total_Charged'
