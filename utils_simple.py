@@ -42,6 +42,8 @@ QUICK RULES (read first):
 - Return lightweight results (numbers, small dicts/lists). Format HTML only in Final Answer.
 - Final Answer must be self-contained static HTML with actual values. Do NOT use placeholders (e.g., [value], <number-from-observation>) or any template syntax ({{ }}, {% %}).
 - If nothing is found, return an empty result or 0 (then explain in Final Answer).
+- AVOID .fillna() on scalar values (like .sum() results). Use conditional checks instead: value if condition else 0.
+- AVOID .clip() without proper bounds. Use .clip(lower=0.0, upper=1.0) with explicit float values.
 
 FORMAT RULES (for Action/Input steps):
 - Action Input: ONE line of Python (no markdown/backticks/newlines). Separate statements with semicolons.
@@ -251,6 +253,8 @@ def python_calculator(code: str):
     - Follow-up questions (use context):
       If context mentions "latest transaction on 2025-08-11" and question asks "How much on that date":
       import pandas as pd; lg = pd.read_csv('ledger.csv'); lg[lg['Posting_Date']=='2025-08-11']['Total_Paid'].sum()
+    - Manager performance analysis (avoid .fillna() on scalars):
+      import pandas as pd; df = pd.read_csv('processed_data.csv'); mgr = 'Joseph Mutunga'; ontime = df[df['Managed_By']==mgr]['Total_Paid'].sum() / df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() if df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() > 0 else 0; {"ontime_ratio": ontime}
     """
     try:
         # Create a safe execution environment with all necessary libraries
@@ -339,6 +343,32 @@ def python_calculator(code: str):
                 replacement = f"[x for x in {iterable} if {condition}]"
                 cleaned_code = re.sub(pattern, replacement, cleaned_code)
                 logger.info("Fixed lambda function scoping issue by replacing filter with list comprehension")
+
+        # Fix common pandas/numpy method errors
+        # Fix .fillna() on scalar values - replace with safe handling
+        cleaned_code = re.sub(r'\.fillna\(0\)\.clip\(upper=1\)', '.fillna(0).clip(upper=1.0)', cleaned_code)
+        cleaned_code = re.sub(r'\.fillna\(0\)\.clip\(lower=0, upper=1\)', '.fillna(0).clip(lower=0.0, upper=1.0)', cleaned_code)
+        cleaned_code = re.sub(r'\.clip\(upper=1\)', '.clip(upper=1.0)', cleaned_code)
+        cleaned_code = re.sub(r'\.clip\(lower=0, upper=1\)', '.clip(lower=0.0, upper=1.0)', cleaned_code)
+        
+        # Fix .fillna() on scalar values by wrapping in safe handling
+        def fix_fillna_on_scalar(match):
+            expr = match.group(1)
+            # If this looks like a scalar operation, wrap it safely
+            if any(op in expr for op in ['.sum()', '.mean()', '.count()', '.nunique()']):
+                return f"({expr}) if pd.notna({expr}) else 0"
+            return f"{expr}.fillna(0)"
+        
+        cleaned_code = re.sub(r'([^)]+\.sum\(\)|[^)]+\.mean\(\)|[^)]+\.count\(\)|[^)]+\.nunique\(\))\.fillna\(0\)', fix_fillna_on_scalar, cleaned_code)
+        
+        # Additional fix for the specific error pattern in the logs
+        # Replace problematic patterns like: (df[...].sum() / df[...].sum()).fillna(0)
+        def fix_division_fillna(match):
+            numerator = match.group(1)
+            denominator = match.group(2)
+            return f"({numerator} / {denominator}) if {denominator} != 0 else 0"
+        
+        cleaned_code = re.sub(r'\(([^)]+\.sum\(\))\s*/\s*([^)]+\.sum\(\))\)\.fillna\(0\)', fix_division_fillna, cleaned_code)
 
         # Column synonym fixes (user phrasing → actual columns or derived)
         # 'Charges' → 'Total_Charged'
