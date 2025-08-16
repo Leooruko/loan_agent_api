@@ -41,7 +41,7 @@ QUICK RULES (read first):
 - For transaction dates/amounts, use ledger.csv. For loan details, use processed_data.csv or loans.csv.
 - Do all calculations in one Action Input. Keep the code short and deterministic.
 - Return lightweight results (numbers, small dicts/lists). Format HTML only in Final Answer.
-- Final Answer must be self-contained static HTML with actual values. Do NOT use placeholders (e.g., [value], <number-from-observation>) or any template syntax ({{ }}, {% %}).
+- Final Answer must be self-contained static HTML with actual values. 
 - If nothing is found, return an empty result or 0 (then explain in Final Answer).
 - AVOID .fillna() on scalar values (like .sum() results). Use conditional checks instead: value if condition else 0.
 - AVOID .clip() without proper bounds. Use .clip(lower=0.0, upper=1.0) with explicit float values.
@@ -88,7 +88,7 @@ FINAL ANSWER RULES:
 - The Final Answer must contain concrete values only.
 - Use the Observation values directly in the Final Answer.
 - NEVER use placeholders like "manager_name", "client_name", "amount" - use actual values from the Observation.
-- NEVER use template syntax like {{ }} or {% %} - embed actual values directly in HTML.
+
 
 🚨 EXAMPLES OF WHAT NOT TO DO IN ACTION INPUT 🚨
 ❌ WRONG: Action Input: ```python
@@ -202,8 +202,6 @@ PYTHON CODING GUIDELINES (concise):
     import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Arrears'].abs().sort_values(ascending=False).head(5).to_dict()
   - Latest transaction (ledger):
     import pandas as pd; lg = pd.read_csv('ledger.csv'); r = lg.sort_values('Posting_Date', ascending=False).iloc[0]; {"Loan_No": r['Loan_No'], "Loan_Product_Type": r['Loan_Product_Type'], "Interest_Paid": r['Interest_Paid'], "Principle_Paid": r['Principle_Paid'], "Total_Paid": r['Total_Paid'], "Posting_Date": str(r['Posting_Date']).split()[0]}
-  - Best performing manager (balanced composite):
-    import pandas as pd; df = pd.read_csv('processed_data.csv'); recent=df[df['Weeks_Passed']<=4]; mgr=df['Managed_By']; exp=df['Expected_Before_Today'].clip(lower=0); ontime=(df.groupby(mgr)['Total_Paid'].sum()/df.groupby(mgr)['Expected_Before_Today'].sum()).fillna(0).clip(upper=1); recent_ratio=(recent.groupby(recent['Managed_By'])['Total_Paid'].sum()/recent.groupby(recent['Managed_By'])['Expected_Before_Today'].sum()).fillna(0).clip(upper=1); per_loan=(df.groupby(mgr)['Total_Paid'].sum()/df.groupby(mgr)['Loan_No'].nunique()).fillna(0); arrears_rate=(df['Arrears'].clip(lower=0).groupby(mgr).sum()/df.groupby(mgr)['Amount_Disbursed'].sum()).fillna(0).clip(lower=0, upper=1); scale_rank=per_loan.rank(pct=True); score=(0.35*ontime + 0.25*recent_ratio + 0.20*scale_rank + 0.20*(1 - arrears_rate)); top=score.sort_values(ascending=False).head(1); {"manager": top.index[0], "score": float(top.iloc[0]), "ontime": float(ontime[top.index[0]]), "recent": float(recent_ratio.get(top.index[0], 0)), "arrears_rate": float(arrears_rate[top.index[0]]), "per_loan": float(per_loan[top.index[0]])}
 
 Important output tip: When your result is a pandas Series/DataFrame, convert it to a compact JSON dict or list and print it, e.g. print(json.dumps(series.to_dict(), ensure_ascii=False)). Avoid printing raw pandas objects.
 
