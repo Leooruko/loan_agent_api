@@ -45,6 +45,7 @@ QUICK RULES (read first):
 - If nothing is found, return an empty result or 0 (then explain in Final Answer).
 - AVOID .fillna() on scalar values (like .sum() results). Use conditional checks instead: value if condition else 0.
 - AVOID .clip() without proper bounds. Use .clip(lower=0.0, upper=1.0) with explicit float values.
+- AVOID grouping Series by columns that don't exist in the Series. Use df.groupby('column')['value'] instead of df['value'].groupby('column').
 
 FORMAT RULES (for Action/Input steps):
 - Action Input: ONE line of Python (no markdown/backticks/newlines). Separate statements with semicolons.
@@ -260,6 +261,8 @@ def python_calculator(code: str):
       import pandas as pd; df = pd.read_csv('processed_data.csv'); mgr = 'Joseph Mutunga'; ontime = df[df['Managed_By']==mgr]['Total_Paid'].sum() / df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() if df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() > 0 else 0; {"ontime_ratio": ontime}
     - Latest loan disbursement (use ledger.csv for transactions):
       import pandas as pd; df = pd.read_csv('processed_data.csv'); lg = pd.read_csv('ledger.csv'); r = lg.sort_values('Posting_Date', ascending=False).iloc[0]; {"Manager": df[df['Loan_No']==r['Loan_No']]['Managed_By'].iloc[0], "Client": df[df['Loan_No']==r['Loan_No']]['Client_Name'].iloc[0], "Amount": float(r['Total_Paid'])}
+    - Manager arrears analysis (group by manager correctly):
+      import pandas as pd; df = pd.read_csv('processed_data.csv'); df.groupby('Managed_By')['Arrears'].abs().sum().to_dict()
     """
     try:
         # Create a safe execution environment with all necessary libraries
@@ -380,6 +383,15 @@ def python_calculator(code: str):
         
         # Fix incorrect data merging (pd.concat with on parameter)
         cleaned_code = re.sub(r'pd\.concat\(\[([^,]+),\s*([^,]+)\],\s*on=([^,]+)\)', r'pd.merge(\1, \2, on=\3)', cleaned_code)
+        
+        # Fix pandas grouping errors - when trying to group a Series by a column that doesn't exist in the Series
+        def fix_series_groupby(match):
+            series_expr = match.group(1)
+            group_col = match.group(2)
+            # Convert to DataFrame grouping instead of Series grouping
+            return f"df.groupby('{group_col}')['Arrears'].abs().sum()"
+        
+        cleaned_code = re.sub(r'([^;]+\[[\'"]Arrears[\'"]\]\.abs\(\))\.groupby\([\'"]([^\'"]+)[\'"]\)', fix_series_groupby, cleaned_code)
 
         # Column synonym fixes (user phrasing → actual columns or derived)
         # 'Charges' → 'Total_Charged'
