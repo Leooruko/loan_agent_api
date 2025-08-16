@@ -46,6 +46,7 @@ QUICK RULES (read first):
 - AVOID .fillna() on scalar values (like .sum() results). Use conditional checks instead: value if condition else 0.
 - AVOID .clip() without proper bounds. Use .clip(lower=0.0, upper=1.0) with explicit float values.
 - AVOID grouping Series by columns that don't exist in the Series. Use df.groupby('column')['value'] instead of df['value'].groupby('column').
+- CRITICAL: NEVER use df['Arrears'].groupby('Managed_By') - this is WRONG. Use df.groupby('Managed_By')['Arrears'] instead.
 
 FORMAT RULES (for Action/Input steps):
 - Action Input: ONE line of Python (no markdown/backticks/newlines). Separate statements with semicolons.
@@ -200,6 +201,8 @@ PYTHON CODING GUIDELINES (concise):
     import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Loan_Product_Type'].value_counts().head(3).to_dict()
   - Highest arrears:
     import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Arrears'].abs().sort_values(ascending=False).head(5).to_dict()
+  - Manager arrears totals:
+    import pandas as pd; df = pd.read_csv('processed_data.csv'); df.groupby('Managed_By')['Arrears'].sum().to_dict()
   - Latest transaction (ledger):
     import pandas as pd; lg = pd.read_csv('ledger.csv'); r = lg.sort_values('Posting_Date', ascending=False).iloc[0]; {"Loan_No": r['Loan_No'], "Loan_Product_Type": r['Loan_Product_Type'], "Interest_Paid": r['Interest_Paid'], "Principle_Paid": r['Principle_Paid'], "Total_Paid": r['Total_Paid'], "Posting_Date": str(r['Posting_Date']).split()[0]}
 
@@ -257,6 +260,8 @@ def python_calculator(code: str):
       import pandas as pd; lg = pd.read_csv('ledger.csv'); lg[lg['Posting_Date']=='2025-08-11']['Total_Paid'].sum()
     - Manager performance analysis (avoid .fillna() on scalars):
       import pandas as pd; df = pd.read_csv('processed_data.csv'); mgr = 'Joseph Mutunga'; ontime = df[df['Managed_By']==mgr]['Total_Paid'].sum() / df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() if df[df['Managed_By']==mgr]['Expected_Before_Today'].sum() > 0 else 0; {"ontime_ratio": ontime}
+    - Manager arrears totals (correct groupby pattern):
+      import pandas as pd; df = pd.read_csv('processed_data.csv'); df.groupby('Managed_By')['Arrears'].sum().to_dict()
     - Latest loan disbursement (use ledger.csv for transactions):
       import pandas as pd; df = pd.read_csv('processed_data.csv'); lg = pd.read_csv('ledger.csv'); r = lg.sort_values('Posting_Date', ascending=False).iloc[0]; {"Manager": df[df['Loan_No']==r['Loan_No']]['Managed_By'].iloc[0], "Client": df[df['Loan_No']==r['Loan_No']]['Client_Name'].iloc[0], "Amount": float(r['Total_Paid'])}
     - Manager arrears analysis (group by manager correctly):
@@ -390,6 +395,21 @@ def python_calculator(code: str):
             return f"df.groupby('{group_col}')['Arrears'].abs().sum()"
         
         cleaned_code = re.sub(r'([^;]+\[[\'"]Arrears[\'"]\]\.abs\(\))\.groupby\([\'"]([^\'"]+)[\'"]\)', fix_series_groupby, cleaned_code)
+        
+        # Fix the specific pattern: df['Arrears'].groupby('Managed_By')
+        def fix_arrears_groupby(match):
+            group_col = match.group(1)
+            return f"df.groupby('{group_col}')['Arrears']"
+        
+        cleaned_code = re.sub(r"df\[['\"]Arrears['\"]\]\.groupby\(['\"]([^'\"]+)['\"]\)", fix_arrears_groupby, cleaned_code)
+        
+        # Fix general Series.groupby() patterns - convert to DataFrame.groupby()
+        def fix_general_series_groupby(match):
+            column = match.group(1)
+            group_col = match.group(2)
+            return f"df.groupby('{group_col}')['{column}']"
+        
+        cleaned_code = re.sub(r"df\[['\"]([^'\"]+)['\"]\]\.groupby\(['\"]([^'\"]+)['\"]\)", fix_general_series_groupby, cleaned_code)
 
         # Column synonym fixes (user phrasing → actual columns or derived)
         # 'Charges' → 'Total_Charged'

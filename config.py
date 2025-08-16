@@ -15,7 +15,7 @@ FLASK_CONFIG = {
 # AI Model Configuration
 AI_CONFIG = {
     'MODEL_NAME': 'mistral',
-    'MAX_QUERY_LENGTH': 10000,  # Reduced for better performance
+    'MAX_QUERY_LENGTH': 5,  # Reduced for better performance
     'MAX_SQL_LENGTH': 3000,    # Reduced for security and performance
     'TIMEOUT_SECONDS': 3600,   # 1 hour timeout for testing
     'MAX_ITERATIONS': 10,     # Increased for testing
