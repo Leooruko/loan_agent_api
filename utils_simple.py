@@ -59,6 +59,10 @@ FORMAT RULES (for Action/Input steps):
 
 IMPORTANT: You MUST complete the ENTIRE response format. Do not stop halfway through.
 
+🚨 CRITICAL GROUPBY WARNING: NEVER use df['column'].groupby('group') - this is WRONG! 🚨
+- WRONG: df['Arrears'].groupby('Managed_By').sum()
+- CORRECT: df.groupby('Managed_By')['Arrears'].sum()
+
 🚨 ATTENTION: You are about to write Action Input - NO BACKTICKS! 🚨
 - When you reach step 3 (Action Input), write ONLY plain Python code
 - NO ```python or ``` - just write the code directly
@@ -571,7 +575,8 @@ async def promt_llm(query, conversation_history=None):
             intermediate = response.get("intermediate_steps")
         except Exception as agent_error:
             # Handle agent parsing errors specifically
-            if "Could not parse LLM output" in str(agent_error):
+            error_str = str(agent_error)
+            if "Could not parse LLM output" in error_str or "Invalid Format" in error_str or "Missing 'Action:'" in error_str:
                 logger.warning(f"Agent parsing error: {agent_error}")
                 return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Processing Error</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I encountered an issue processing your request. Please try rephrasing your question or ask about a different aspect of the loan portfolio.</p></div></div>'
             else:
@@ -626,6 +631,11 @@ async def promt_llm(query, conversation_history=None):
             if "Action Input:" in result and "Final Answer:" not in result:
                 logger.warning(f"Incomplete response detected: {result[:200]}...")
                 return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Incomplete Response</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I started processing your request but didn\'t complete it. Please try asking your question again.</p></div></div>'
+            
+            # Check for malformed responses that start with "Thought:" but don't follow proper format
+            if result.strip().startswith("Thought:") and "Action:" not in result and "Final Answer:" not in result:
+                logger.warning(f"Malformed response detected: {result[:200]}...")
+                return f'<div class="response-container"><div style="background: linear-gradient(135deg, #F25D27 0%, #19593B 100%); color: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 4px 15px rgba(242, 93, 39, 0.3); border-left: 5px solid #19593B;"><h3 style="margin: 0 0 10px 0; font-size: 1.3rem; font-weight: 700;">Format Error</h3><p style="margin: 0; line-height: 1.6; font-size: 1rem;">I encountered a formatting issue with the response. Please try asking your question again.</p></div></div>'
             
             # Look for "Final Answer:" and extract everything after it
             final_answer_match = re.search(r'Final Answer:\s*(.*)', result, re.DOTALL)
