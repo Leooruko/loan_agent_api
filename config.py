@@ -15,7 +15,7 @@ FLASK_CONFIG = {
 # AI Model Configuration
 AI_CONFIG = {
     'MODEL_NAME': 'mistral',
-    'MAX_QUERY_LENGTH': 5,  # Reduced for better performance
+    'MAX_QUERY_LENGTH': 10000,  # Increased to allow lengthy questions
     'MAX_SQL_LENGTH': 3000,    # Reduced for security and performance
     'TIMEOUT_SECONDS': 3600,   # 1 hour timeout for testing
     'MAX_ITERATIONS': 10,     # Increased for testing
@@ -122,6 +122,5 @@ PERFORMANCE_CONFIG = {
 SECURITY_CONFIG = {
     'ALLOWED_SQL_KEYWORDS': ['SELECT', 'FROM', 'WHERE', 'ORDER BY', 'GROUP BY', 'LIMIT', 'COUNT', 'SUM', 'AVG', 'MAX', 'MIN'],
     'BLOCKED_SQL_KEYWORDS': ['INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 'EXEC', 'EXECUTE'],
-    'MAX_QUERY_COMPLEXITY': 50,  # Number of clauses allowed
-    'RATE_LIMIT_PER_MINUTE': 30
+    'MAX_QUERY_COMPLEXITY': 50  # Number of clauses allowed
 } 

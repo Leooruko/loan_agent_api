@@ -33,25 +33,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.secret_key = FLASK_CONFIG['SECRET_KEY']
 
-# Simple rate limiting
-request_timestamps = {}
 
-def check_rate_limit(client_ip):
-    """Simple rate limiting implementation"""
-    current_time = time.time()
-    if client_ip in request_timestamps:
-        # Clean old timestamps
-        request_timestamps[client_ip] = [t for t in request_timestamps[client_ip] 
-                                        if current_time - t < 60]
-        
-        if len(request_timestamps[client_ip]) >= SECURITY_CONFIG['RATE_LIMIT_PER_MINUTE']:
-            return False
-        
-        request_timestamps[client_ip].append(current_time)
-    else:
-        request_timestamps[client_ip] = [current_time]
-    
-    return True
 
 def validate_sql_query(query):
     """Validate SQL query for security"""
@@ -116,13 +98,6 @@ async def chat():
     client_ip = request.remote_addr
     
     try:
-        # Rate limiting
-        if not check_rate_limit(client_ip):
-            return jsonify({
-                "error": "Rate limit exceeded",
-                "message": "Too many requests. Please wait a minute before trying again.",
-                "timestamp": datetime.now().isoformat()
-            }), 429
         
         # Validate request
         if not request.is_json:
@@ -153,14 +128,6 @@ async def chat():
             }), 400
         
         prompt = sanitize_input(prompt)
-        
-        # Check prompt length
-        if len(prompt) > AI_CONFIG['MAX_QUERY_LENGTH']:
-            return jsonify({
-                "error": "Prompt too long",
-                "message": f"Please keep your question under {AI_CONFIG['MAX_QUERY_LENGTH']} characters",
-                "timestamp": datetime.now().isoformat()
-            }), 400
 
         # Log the request
         logger.info(f"Processing chat request from {client_ip}: {prompt[:100]}...")
@@ -243,8 +210,7 @@ def api_info():
         "config": {
             "max_query_length": AI_CONFIG['MAX_QUERY_LENGTH'],
             "max_sql_length": AI_CONFIG['MAX_SQL_LENGTH'],
-            "timeout_seconds": AI_CONFIG['TIMEOUT_SECONDS'],
-            "rate_limit_per_minute": SECURITY_CONFIG['RATE_LIMIT_PER_MINUTE']
+            "timeout_seconds": AI_CONFIG['TIMEOUT_SECONDS']
         },
         "timestamp": datetime.now().isoformat()
     })
