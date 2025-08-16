@@ -27,6 +27,8 @@ llm = Ollama(
 """
 You are a friendly and professional Loan Data Analyst at BrightCom Loans. Your job is to answer user questions using the provided CSV datasets with rigorous mathematical reasoning. You write concise, deterministic Python code for computation and provide clear business HTML answers styled with BrightCom brand colors.
 
+IMPORTANT: When you see "Previous conversation context:" in the input, pay attention to the context and use it to understand follow-up questions. For example, if the context mentions "latest transaction was on 2025-08-11" and the current question asks "How much was transacted on that date", you should use "2025-08-11" as the date to analyze.
+
 Brand colors
 Primary #F25D27, Success #82BF45, Dark #19593B, White #FFFFFF.
 
@@ -246,6 +248,9 @@ def python_calculator(code: str):
     - "import pandas as pd; df = pd.read_csv('processed_data.csv'); df['Total_Paid'].sum()" for data analysis
     - Clients due today (list of dicts):
       import pandas as pd; df = pd.read_csv('processed_data.csv'); d = df[df['Due_Today']>0][['Client_Code','Client_Name','Due_Today']].head(50); [{"Client_Code": r['Client_Code'], "Client_Name": r['Client_Name'], "Due_Today": float(r['Due_Today'])} for _, r in d.iterrows()]
+    - Follow-up questions (use context):
+      If context mentions "latest transaction on 2025-08-11" and question asks "How much on that date":
+      import pandas as pd; lg = pd.read_csv('ledger.csv'); lg[lg['Posting_Date']=='2025-08-11']['Total_Paid'].sum()
     """
     try:
         # Create a safe execution environment with all necessary libraries
@@ -340,10 +345,19 @@ def python_calculator(code: str):
         if "df['Charges']" in cleaned_code or 'df["Charges"]' in cleaned_code:
             cleaned_code = cleaned_code.replace("df['Charges']", "df['Total_Charged']").replace('df["Charges"]', 'df["Total_Charged"]')
             logger.info("Mapped column synonym 'Charges' → 'Total_Charged'")
-        # 'Amount_Due' → (Total_Charged - Total_Paid)
+        # 'Amount_Due' → (Total_Charged - Total_Paid) when used via df['Amount_Due'] accessor
         if "df['Amount_Due']" in cleaned_code or 'df["Amount_Due"]' in cleaned_code:
             cleaned_code = cleaned_code.replace("df['Amount_Due']", "(df['Total_Charged'] - df['Total_Paid'])").replace('df["Amount_Due"]', '(df["Total_Charged"] - df["Total_Paid"])')
             logger.info("Mapped column synonym 'Amount_Due' → (Total_Charged - Total_Paid)")
+        
+        # If 'Amount_Due' appears as a column label (in a list selection or groupby), define it after df read
+        if ('Amount_Due' in cleaned_code and "df['Amount_Due']" not in cleaned_code and 'df["Amount_Due"]' not in cleaned_code):
+            # Inject creation right after df read of processed_data
+            pattern_df_read = r"(df\s*=\s*pd\.read_csv\(['\"]processed_data\.csv['\"]\)\s*)"
+            if re.search(pattern_df_read, cleaned_code):
+                cleaned_code = re.sub(pattern_df_read, r"\1\n" + "df['Amount_Due'] = (df['Total_Charged'] - df['Total_Paid'])\n", cleaned_code, count=1)
+                logger.info("Injected df['Amount_Due'] derivation after df read")
+        
         # 'Is_Due_Today' / 'Is_Installment_Due_Today' → use Due_Today > 0
         if "['Is_Due_Today']" in cleaned_code or "['Is_Installment_Due_Today']" in cleaned_code or '["Is_Due_Today"]' in cleaned_code or '["Is_Installment_Due_Today"]' in cleaned_code:
             cleaned_code = cleaned_code.replace("['Is_Due_Today']", "['Due_Today']").replace('["Is_Due_Today"]', '["Due_Today"]').replace("['Is_Installment_Due_Today']", "['Due_Today']").replace('["Is_Installment_Due_Today"]', '["Due_Today"]')
@@ -362,6 +376,13 @@ def python_calculator(code: str):
         # Normalize single-bracket multi-column selection to double brackets
         cleaned_code = re.sub(r"\[(\s*'[^']+'\s*(?:,\s*'[^']+'\s*)+)\]", r"[[\1]]", cleaned_code)
         cleaned_code = re.sub(r"\[(\s*\"[^\"]+\"\s*(?:,\s*\"[^\"]+\"\s*)+)\]", r"[[\1]]", cleaned_code)
+
+        # Convert df[cond][[cols]] → df.loc[cond, [cols]]
+        def _to_loc(m: re.Match) -> str:
+            cond = m.group(1)
+            cols = m.group(2)
+            return f"df.loc[{cond}, [{cols}]]"
+        cleaned_code = re.sub(r"df\s*\[(.+?)\]\s*\[\[\s*(.+?)\s*\]\]", _to_loc, cleaned_code)
         
         # Ensure the code starts with import
         if not cleaned_code.lstrip().startswith('import'):
@@ -452,8 +473,29 @@ async def promt_llm(query, conversation_history=None):
         if agent is None:
             return "I'm having trouble initializing the AI system. Please restart the application."
         
+        # Build context from conversation history
+        context = ""
+        if conversation_history and len(conversation_history) > 0:
+            # Add recent conversation context to help with follow-up questions
+            recent_context = []
+            for msg in conversation_history[-3:]:  # Last 3 messages for context
+                if msg.get('role') == 'user':
+                    recent_context.append(f"User: {msg.get('content', '')}")
+                elif msg.get('role') == 'assistant':
+                    # Extract key information from assistant responses
+                    content = msg.get('content', '')
+                    # Look for specific data points that might be referenced
+                    if any(keyword in content.lower() for keyword in ['latest transaction', 'date', 'amount', 'total', 'found', 'result']):
+                        recent_context.append(f"Previous finding: {content}")
+            
+            if recent_context:
+                context = "\n\nPrevious conversation context:\n" + "\n".join(recent_context) + "\n\n"
+        
+        # Combine context with current query
+        full_query = context + "Current question: " + query
+        
         try:
-            response = agent.invoke({"input": query})
+            response = agent.invoke({"input": full_query})
             result = response.get("output", "No response generated")
             intermediate = response.get("intermediate_steps")
         except Exception as agent_error:

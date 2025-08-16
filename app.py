@@ -169,7 +169,7 @@ async def chat():
         try:
             # Use a more generous timeout for AI processing
             response = await asyncio.wait_for(
-                promt_llm(query=prompt), 
+                promt_llm(query=prompt, conversation_history=history), 
                 timeout=AI_CONFIG['REQUEST_TIMEOUT']
             )
         except asyncio.TimeoutError:
